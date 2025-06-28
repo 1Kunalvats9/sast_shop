@@ -130,7 +130,7 @@ const Footer = () => {
                 transition={{ duration: 0.2 }}
               >
                 <MapPin className="w-5 h-5 text-blue-400" />
-                <span>123 Commerce St, City, State 12345</span>
+                <span>SAST Delhi, India</span>
               </motion.div>
               <motion.div 
                 className="flex items-center gap-3 text-gray-400"
@@ -138,7 +138,7 @@ const Footer = () => {
                 transition={{ duration: 0.2 }}
               >
                 <Phone className="w-5 h-5 text-blue-400" />
-                <span>+1 (555) 123-4567</span>
+                <span>+91 123-4567 890</span>
               </motion.div>
               <motion.div 
                 className="flex items-center gap-3 text-gray-400"
