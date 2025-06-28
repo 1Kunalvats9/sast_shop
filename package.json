@@ -11,7 +11,6 @@
   "dependencies": {
     "@clerk/nextjs": "^6.23.1",
     "@tabler/icons-react": "^3.34.0",
-    "better-auth": "^1.2.10",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.523.0",
