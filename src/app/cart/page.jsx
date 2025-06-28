@@ -94,7 +94,9 @@ export default function Cart() {
                     name: item.name,
                     price: item.price,
                     quantity: item.quantity,
-                    image: item.image
+                    image: item.image,
+                    selectedSize: item.selectedSize || null,
+                    selectedColor: item.selectedColor || null
                 })),
                 deliveryAddress,
                 paymentMethod,
@@ -156,7 +158,7 @@ export default function Cart() {
                             {/* Cart Items */}
                             <div className="space-y-4 md:space-y-0">
                                 {cart.map((product) => (
-                                    <div key={product._id} className="md:grid md:grid-cols-[2fr_1fr_1fr] flex flex-col bg-gray-900 md:bg-transparent rounded-lg md:rounded-none p-4 md:p-0 text-gray-300 items-start md:items-center text-sm md:text-base font-medium md:pt-3 border-b border-gray-800 md:py-4">
+                                    <div key={`${product._id}-${product.selectedSize || 'no-size'}-${product.selectedColor || 'no-color'}`} className="md:grid md:grid-cols-[2fr_1fr_1fr] flex flex-col bg-gray-900 md:bg-transparent rounded-lg md:rounded-none p-4 md:p-0 text-gray-300 items-start md:items-center text-sm md:text-base font-medium md:pt-3 border-b border-gray-800 md:py-4">
                                         {/* Product Info */}
                                         <div className="flex items-center gap-3 md:gap-6 w-full mb-4 md:mb-0">
                                             <div className="cursor-pointer w-20 h-20 md:w-24 md:h-24 flex items-center justify-center border border-gray-700 rounded bg-white overflow-hidden flex-shrink-0">
@@ -164,6 +166,23 @@ export default function Cart() {
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <p className="font-semibold text-white mb-2 line-clamp-2">{product.name}</p>
+                                                
+                                                {/* Size and Color Display */}
+                                                {(product.selectedSize || product.selectedColor) && (
+                                                    <div className="mb-2 flex flex-wrap gap-2">
+                                                        {product.selectedSize && (
+                                                            <span className="bg-blue-600 text-white px-2 py-1 rounded-full text-xs font-medium">
+                                                                Size: {product.selectedSize}
+                                                            </span>
+                                                        )}
+                                                        {product.selectedColor && (
+                                                            <span className="bg-green-600 text-white px-2 py-1 rounded-full text-xs font-medium">
+                                                                Color: {product.selectedColor}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                )}
+
                                                 <div className="font-normal text-gray-500 space-y-1">
                                                     <p>Price: ₹{product.price ? product.price.toFixed(2) : '0.00'}</p>
                                                     <div className='flex items-center'>

@@ -239,6 +239,23 @@ export default function OrdersPage() {
                               />
                               <div className="flex-1">
                                 <p className="font-medium text-gray-200">{item.name}</p>
+                                
+                                {/* Size and Color Display */}
+                                {(item.selectedSize || item.selectedColor) && (
+                                  <div className="flex flex-wrap gap-1 mt-1 mb-1">
+                                    {item.selectedSize && (
+                                      <span className="bg-blue-600 text-white px-2 py-0.5 rounded-full text-xs font-medium">
+                                        Size: {item.selectedSize}
+                                      </span>
+                                    )}
+                                    {item.selectedColor && (
+                                      <span className="bg-green-600 text-white px-2 py-0.5 rounded-full text-xs font-medium">
+                                        Color: {item.selectedColor}
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                                
                                 <p className="text-sm text-gray-400">
                                   Qty: {item.quantity} × ₹{item.price.toFixed(2)}
                                 </p>

@@ -8,7 +8,17 @@ const cartReducer = (state, action) => {
     case 'LOAD_CART':
       return action.payload;
     case 'ADD_TO_CART':
-      const existingItemIndex = state.findIndex(item => item._id === action.payload._id);
+      // Create a unique identifier for products with variants
+      const getItemId = (item) => {
+        if (item.selectedSize || item.selectedColor) {
+          return `${item._id}-${item.selectedSize || 'no-size'}-${item.selectedColor || 'no-color'}`;
+        }
+        return item._id;
+      };
+
+      const newItemId = getItemId(action.payload);
+      const existingItemIndex = state.findIndex(item => getItemId(item) === newItemId);
+      
       if (existingItemIndex > -1) {
         const updatedCart = [...state];
         updatedCart[existingItemIndex].quantity += 1;
@@ -16,13 +26,21 @@ const cartReducer = (state, action) => {
       }
       return [...state, { ...action.payload, quantity: 1 }];
     case 'UPDATE_QUANTITY':
-      return state.map(item =>
-        item._id === action.payload.id
+      return state.map(item => {
+        const itemId = item.selectedSize || item.selectedColor 
+          ? `${item._id}-${item.selectedSize || 'no-size'}-${item.selectedColor || 'no-color'}`
+          : item._id;
+        return itemId === action.payload.id
           ? { ...item, quantity: action.payload.quantity }
-          : item
-      );
+          : item;
+      });
     case 'REMOVE_FROM_CART':
-      return state.filter(item => item._id !== action.payload);
+      return state.filter(item => {
+        const itemId = item.selectedSize || item.selectedColor 
+          ? `${item._id}-${item.selectedSize || 'no-size'}-${item.selectedColor || 'no-color'}`
+          : item._id;
+        return itemId !== action.payload;
+      });
     case 'CLEAR_CART':
       return [];
     default:
