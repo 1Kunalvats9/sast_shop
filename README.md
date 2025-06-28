@@ -4,13 +4,13 @@ This is a modern e-commerce platform built with Next.js, featuring admin dashboa
 
 ## Features
 
-- 🛍️ Product catalog with featured items
-- 🛒 Shopping cart functionality
-- 👤 User authentication with Clerk
-- 📦 Order management system
-- 🔧 Admin dashboard for product and order management
-- ☁️ Cloudinary integration for image uploads
-- 📱 Responsive design
+- Product catalog with featured items
+- Shopping cart functionality
+- User authentication with Clerk
+- Order management system
+- Admin dashboard for product and order management
+- Cloudinary integration for image uploads
+- Responsive design
 
 ## Environment Variables
 
