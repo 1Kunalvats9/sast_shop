@@ -87,6 +87,16 @@ const OrderSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  stockUpdates: [{
+    productId: mongoose.Schema.Types.ObjectId,
+    type: {
+      type: String,
+      enum: ['regular', 'variant']
+    },
+    variantIndex: Number,
+    quantity: Number,
+    originalStock: Number
+  }],
   createdAt: {
     type: Date,
     default: Date.now

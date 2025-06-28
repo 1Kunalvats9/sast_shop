@@ -114,12 +114,12 @@ export default function Cart() {
             const data = await response.json()
 
             if (data.success) {
-                toast.success('Order placed successfully!')
+                toast.success('Order placed successfully! Your order is under process and our team will approve it soon.')
                 clearCart()
                 localStorage.removeItem('deliveryAddress')
                 router.push('/orders')
             } else {
-                toast.error('Failed to place order')
+                toast.error(data.error || 'Failed to place order')
             }
         } catch (error) {
             console.error('Error placing order:', error)
@@ -157,67 +157,73 @@ export default function Cart() {
 
                             {/* Cart Items */}
                             <div className="space-y-4 md:space-y-0">
-                                {cart.map((product) => (
-                                    <div key={`${product._id}-${product.selectedSize || 'no-size'}-${product.selectedColor || 'no-color'}`} className="md:grid md:grid-cols-[2fr_1fr_1fr] flex flex-col bg-gray-900 md:bg-transparent rounded-lg md:rounded-none p-4 md:p-0 text-gray-300 items-start md:items-center text-sm md:text-base font-medium md:pt-3 border-b border-gray-800 md:py-4">
-                                        {/* Product Info */}
-                                        <div className="flex items-center gap-3 md:gap-6 w-full mb-4 md:mb-0">
-                                            <div className="cursor-pointer w-20 h-20 md:w-24 md:h-24 flex items-center justify-center border border-gray-700 rounded bg-white overflow-hidden flex-shrink-0">
-                                                <img className="max-w-full h-full object-cover" src={product.image} alt={product.name} />
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="font-semibold text-white mb-2 line-clamp-2">{product.name}</p>
-                                                
-                                                {/* Size and Color Display */}
-                                                {(product.selectedSize || product.selectedColor) && (
-                                                    <div className="mb-2 flex flex-wrap gap-2">
-                                                        {product.selectedSize && (
-                                                            <span className="bg-blue-600 text-white px-2 py-1 rounded-full text-xs font-medium">
-                                                                Size: {product.selectedSize}
-                                                            </span>
-                                                        )}
-                                                        {product.selectedColor && (
-                                                            <span className="bg-green-600 text-white px-2 py-1 rounded-full text-xs font-medium">
-                                                                Color: {product.selectedColor}
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                )}
+                                {cart.map((product) => {
+                                    const itemId = product.selectedSize || product.selectedColor 
+                                        ? `${product._id}-${product.selectedSize || 'no-size'}-${product.selectedColor || 'no-color'}`
+                                        : product._id;
+                                    
+                                    return (
+                                        <div key={itemId} className="md:grid md:grid-cols-[2fr_1fr_1fr] flex flex-col bg-gray-900 md:bg-transparent rounded-lg md:rounded-none p-4 md:p-0 text-gray-300 items-start md:items-center text-sm md:text-base font-medium md:pt-3 border-b border-gray-800 md:py-4">
+                                            {/* Product Info */}
+                                            <div className="flex items-center gap-3 md:gap-6 w-full mb-4 md:mb-0">
+                                                <div className="cursor-pointer w-20 h-20 md:w-24 md:h-24 flex items-center justify-center border border-gray-700 rounded bg-white overflow-hidden flex-shrink-0">
+                                                    <img className="max-w-full h-full object-cover" src={product.image} alt={product.name} />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="font-semibold text-white mb-2 line-clamp-2">{product.name}</p>
+                                                    
+                                                    {/* Size and Color Display */}
+                                                    {(product.selectedSize || product.selectedColor) && (
+                                                        <div className="mb-2 flex flex-wrap gap-2">
+                                                            {product.selectedSize && (
+                                                                <span className="bg-blue-600 text-white px-2 py-1 rounded-full text-xs font-medium">
+                                                                    Size: {product.selectedSize}
+                                                                </span>
+                                                            )}
+                                                            {product.selectedColor && (
+                                                                <span className="bg-green-600 text-white px-2 py-1 rounded-full text-xs font-medium">
+                                                                    Color: {product.selectedColor}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    )}
 
-                                                <div className="font-normal text-gray-500 space-y-1">
-                                                    <p>Price: ₹{product.price ? product.price.toFixed(2) : '0.00'}</p>
-                                                    <div className='flex items-center'>
-                                                        <p>Qty:</p>
-                                                        <select
-                                                            className='outline-none bg-gray-800 border border-gray-600 text-white ml-2 rounded p-1 text-sm'
-                                                            value={product.quantity || 1}
-                                                            onChange={(e) => handleQuantityChange(product._id, e.target.value)}
-                                                        >
-                                                            {Array(10).fill('').map((_, index) => (
-                                                                <option key={index} value={index + 1}>{index + 1}</option>
-                                                            ))}
-                                                        </select>
+                                                    <div className="font-normal text-gray-500 space-y-1">
+                                                        <p>Price: ₹{product.price ? product.price.toFixed(2) : '0.00'}</p>
+                                                        <div className='flex items-center'>
+                                                            <p>Qty:</p>
+                                                            <select
+                                                                className='outline-none bg-gray-800 border border-gray-600 text-white ml-2 rounded p-1 text-sm'
+                                                                value={product.quantity || 1}
+                                                                onChange={(e) => handleQuantityChange(itemId, e.target.value)}
+                                                            >
+                                                                {Array(10).fill('').map((_, index) => (
+                                                                    <option key={index} value={index + 1}>{index + 1}</option>
+                                                                ))}
+                                                            </select>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
 
-                                        {/* Mobile Layout for Price and Action */}
-                                        <div className="flex justify-between items-center w-full md:hidden">
-                                            <p className="text-lg font-semibold text-white">₹{((product.price || 0) * (product.quantity || 1)).toFixed(2)}</p>
-                                            <button onClick={() => handleRemoveItem(product._id)} className="cursor-pointer text-red-500 hover:text-red-700 p-2">
-                                                <X size={20} />
-                                            </button>
-                                        </div>
+                                            {/* Mobile Layout for Price and Action */}
+                                            <div className="flex justify-between items-center w-full md:hidden">
+                                                <p className="text-lg font-semibold text-white">₹{((product.price || 0) * (product.quantity || 1)).toFixed(2)}</p>
+                                                <button onClick={() => handleRemoveItem(itemId)} className="cursor-pointer text-red-500 hover:text-red-700 p-2">
+                                                    <X size={20} />
+                                                </button>
+                                            </div>
 
-                                        {/* Desktop Layout for Price and Action */}
-                                        <p className="hidden md:block text-center">₹{((product.price || 0) * (product.quantity || 1)).toFixed(2)}</p>
-                                        <div className="hidden md:flex justify-center">
-                                            <button onClick={() => handleRemoveItem(product._id)} className="cursor-pointer text-red-500 hover:text-red-700">
-                                                <X size={20} />
-                                            </button>
+                                            {/* Desktop Layout for Price and Action */}
+                                            <p className="hidden md:block text-center">₹{((product.price || 0) * (product.quantity || 1)).toFixed(2)}</p>
+                                            <div className="hidden md:flex justify-center">
+                                                <button onClick={() => handleRemoveItem(itemId)} className="cursor-pointer text-red-500 hover:text-red-700">
+                                                    <X size={20} />
+                                                </button>
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
 
                             {/* Action Buttons */}
