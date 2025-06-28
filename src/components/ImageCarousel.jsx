@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 const ImageCarousel = ({ images, productName, className = "" }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
+  const [isImageHovered, setIsImageHovered] = useState(false);
 
   // Ensure we have at least one image
   const imageList = images && images.length > 0 ? images : [images].filter(Boolean);
@@ -19,35 +19,49 @@ const ImageCarousel = ({ images, productName, className = "" }) => {
     );
   }
 
-  const nextImage = () => {
+  const nextImage = (e) => {
+    e?.stopPropagation();
+    e?.preventDefault();
     setCurrentIndex((prev) => (prev + 1) % imageList.length);
   };
 
-  const prevImage = () => {
+  const prevImage = (e) => {
+    e?.stopPropagation();
+    e?.preventDefault();
     setCurrentIndex((prev) => (prev - 1 + imageList.length) % imageList.length);
   };
 
-  const goToImage = (index) => {
+  const goToImage = (index, e) => {
+    e?.stopPropagation();
+    e?.preventDefault();
     setCurrentIndex(index);
+  };
+
+  const handleImageClick = (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setIsModalOpen(true);
   };
 
   return (
     <>
       <div 
-        className={`relative group ${className}`}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
+        className={`relative overflow-hidden rounded-lg ${className}`}
+        style={{ isolation: 'isolate' }} // Create new stacking context
       >
-        {/* Main Image */}
-        <motion.div 
-          className="relative w-full h-full overflow-hidden rounded-lg cursor-pointer"
-          onClick={() => setIsModalOpen(true)}
+        {/* Image Container with isolated hover detection */}
+        <div 
+          className="relative w-full h-full group/image"
+          onMouseEnter={() => setIsImageHovered(true)}
+          onMouseLeave={() => setIsImageHovered(false)}
+          onClick={handleImageClick}
         >
+          {/* Main Image */}
           <motion.img
             key={currentIndex}
             src={imageList[currentIndex]}
             alt={`${productName} - Image ${currentIndex + 1}`}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover cursor-pointer"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.3 }}
@@ -59,100 +73,100 @@ const ImageCarousel = ({ images, productName, className = "" }) => {
           
           {/* Image Counter */}
           {imageList.length > 1 && (
-            <div className="absolute top-2 right-2 bg-black/70 text-white px-2 py-1 rounded-full text-xs font-medium z-10">
+            <div className="absolute top-2 right-2 bg-black/80 text-white px-2 py-1 rounded-full text-xs font-medium z-30 pointer-events-none">
               {currentIndex + 1}/{imageList.length}
             </div>
           )}
-        </motion.div>
 
-        {/* Navigation Arrows */}
-        {imageList.length > 1 && (
-          <>
-            <motion.button
-              onClick={(e) => {
-                e.stopPropagation();
-                prevImage();
-              }}
-              className={`absolute left-2 top-1/2 -translate-y-1/2 bg-black/70 hover:bg-black/90 text-white p-2 rounded-full transition-all duration-300 z-20 ${
-                isHovered ? 'opacity-100 visible' : 'opacity-0 invisible'
-              }`}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: isHovered ? 1 : 0 }}
-              transition={{ duration: 0.2 }}
-            >
-              <ChevronLeft size={18} />
-            </motion.button>
-
-            <motion.button
-              onClick={(e) => {
-                e.stopPropagation();
-                nextImage();
-              }}
-              className={`absolute right-2 top-1/2 -translate-y-1/2 bg-black/70 hover:bg-black/90 text-white p-2 rounded-full transition-all duration-300 z-20 ${
-                isHovered ? 'opacity-100 visible' : 'opacity-0 invisible'
-              }`}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: isHovered ? 1 : 0 }}
-              transition={{ duration: 0.2 }}
-            >
-              <ChevronRight size={18} />
-            </motion.button>
-          </>
-        )}
-
-        {/* Dots Indicator */}
-        {imageList.length > 1 && (
-          <div className={`absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 z-10 transition-opacity duration-300 ${
-            isHovered ? 'opacity-100' : 'opacity-70'
-          }`}>
-            {imageList.map((_, index) => (
-              <button
-                key={index}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  goToImage(index);
+          {/* Navigation Arrows - Only show on image hover */}
+          {imageList.length > 1 && (
+            <>
+              <motion.button
+                onClick={prevImage}
+                className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/80 hover:bg-black text-white p-2 rounded-full z-30 shadow-lg"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ 
+                  opacity: isImageHovered ? 1 : 0,
+                  scale: isImageHovered ? 1 : 0.8,
+                  pointerEvents: isImageHovered ? 'auto' : 'none'
                 }}
-                className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                  index === currentIndex 
-                    ? 'bg-white scale-110 shadow-lg' 
-                    : 'bg-white/60 hover:bg-white/90'
-                }`}
-              />
-            ))}
-          </div>
-        )}
+                transition={{ duration: 0.2 }}
+                whileHover={{ scale: 1.1, backgroundColor: 'rgba(0, 0, 0, 0.95)' }}
+                whileTap={{ scale: 0.9 }}
+              >
+                <ChevronLeft size={18} />
+              </motion.button>
 
-        {/* Mobile Touch Indicators (always visible on mobile) */}
-        {imageList.length > 1 && (
-          <div className="md:hidden absolute inset-0 flex">
-            <div 
-              className="w-1/2 h-full flex items-center justify-start pl-2"
-              onClick={(e) => {
-                e.stopPropagation();
-                prevImage();
-              }}
+              <motion.button
+                onClick={nextImage}
+                className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/80 hover:bg-black text-white p-2 rounded-full z-30 shadow-lg"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ 
+                  opacity: isImageHovered ? 1 : 0,
+                  scale: isImageHovered ? 1 : 0.8,
+                  pointerEvents: isImageHovered ? 'auto' : 'none'
+                }}
+                transition={{ duration: 0.2 }}
+                whileHover={{ scale: 1.1, backgroundColor: 'rgba(0, 0, 0, 0.95)' }}
+                whileTap={{ scale: 0.9 }}
+              >
+                <ChevronRight size={18} />
+              </motion.button>
+            </>
+          )}
+
+          {/* Dots Indicator */}
+          {imageList.length > 1 && (
+            <motion.div 
+              className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 z-30"
+              initial={{ opacity: 0.7 }}
+              animate={{ opacity: isImageHovered ? 1 : 0.7 }}
+              transition={{ duration: 0.2 }}
             >
-              <div className="bg-black/50 text-white p-1 rounded-full">
-                <ChevronLeft size={16} />
+              {imageList.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={(e) => goToImage(index, e)}
+                  className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                    index === currentIndex 
+                      ? 'bg-white scale-110 shadow-lg' 
+                      : 'bg-white/60 hover:bg-white/90'
+                  }`}
+                />
+              ))}
+            </motion.div>
+          )}
+
+          {/* Mobile Touch Areas (always visible on mobile) */}
+          {imageList.length > 1 && (
+            <div className="md:hidden absolute inset-0 flex z-20">
+              <div 
+                className="w-1/2 h-full flex items-center justify-start pl-2"
+                onClick={prevImage}
+              >
+                <div className="bg-black/60 text-white p-1 rounded-full opacity-70">
+                  <ChevronLeft size={16} />
+                </div>
+              </div>
+              <div 
+                className="w-1/2 h-full flex items-center justify-end pr-2"
+                onClick={nextImage}
+              >
+                <div className="bg-black/60 text-white p-1 rounded-full opacity-70">
+                  <ChevronRight size={16} />
+                </div>
               </div>
             </div>
-            <div 
-              className="w-1/2 h-full flex items-center justify-end pr-2"
-              onClick={(e) => {
-                e.stopPropagation();
-                nextImage();
-              }}
-            >
-              <div className="bg-black/50 text-white p-1 rounded-full">
-                <ChevronRight size={16} />
-              </div>
-            </div>
-          </div>
-        )}
+          )}
+
+          {/* Hover Overlay for better visual feedback */}
+          <motion.div
+            className="absolute inset-0 bg-black/10 pointer-events-none z-10"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: isImageHovered ? 1 : 0 }}
+            transition={{ duration: 0.2 }}
+          />
+        </div>
       </div>
 
       {/* Full Screen Modal */}
