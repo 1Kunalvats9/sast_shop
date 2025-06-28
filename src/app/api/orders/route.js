@@ -37,7 +37,6 @@ export async function POST(request) {
     const body = await request.json();
     const { userId, userEmail, items, deliveryAddress, paymentMethod, totalAmount } = body;
     
-    // Generate unique order ID
     const orderId = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     
     const order = new Order({

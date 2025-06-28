@@ -3,7 +3,6 @@ import { NextResponse } from 'next/server';
 
 export async function POST(request) {
   try {
-    // Check if environment variables are set
     if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
       console.error('Missing Cloudinary environment variables');
       return NextResponse.json(
@@ -12,7 +11,6 @@ export async function POST(request) {
       );
     }
 
-    // Configure Cloudinary
     cloudinary.config({
       cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
       api_key: process.env.CLOUDINARY_API_KEY,
@@ -30,7 +28,6 @@ export async function POST(request) {
       );
     }
 
-    // Validate file type
     if (!file.type.startsWith('image/')) {
       return NextResponse.json(
         { success: false, error: 'Only image files are allowed' },
@@ -38,7 +35,6 @@ export async function POST(request) {
       );
     }
 
-    // Validate file size (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
       return NextResponse.json(
         { success: false, error: 'File size must be less than 10MB' },
@@ -46,20 +42,18 @@ export async function POST(request) {
       );
     }
 
-    // Convert file to buffer
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Upload to Cloudinary with better error handling
     const result = await new Promise((resolve, reject) => {
       cloudinary.uploader.upload_stream(
         {
           resource_type: 'auto',
           folder: 'sast-shop',
           transformation: [
-            { width: 800, height: 600, crop: 'limit' }, // Optimize image size
-            { quality: 'auto' }, // Auto quality optimization
-            { fetch_format: 'auto' } // Auto format optimization
+            { width: 800, height: 600, crop: 'limit' }, 
+            { quality: 'auto' }, 
+            { fetch_format: 'auto' } 
           ]
         },
         (error, result) => {
@@ -82,7 +76,6 @@ export async function POST(request) {
   } catch (error) {
     console.error('Error uploading to Cloudinary:', error);
     
-    // More specific error messages
     let errorMessage = 'Failed to upload image';
     if (error.message.includes('Invalid API key')) {
       errorMessage = 'Invalid Cloudinary API key';

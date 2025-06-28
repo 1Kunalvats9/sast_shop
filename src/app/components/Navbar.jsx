@@ -33,7 +33,6 @@ const Navbar = () => {
                 </motion.div>
 
                 <div className="flex items-center space-x-3 md:space-x-4">
-                    {/* Products Button */}
                     <motion.button
                         onClick={() => router.push('/products')}
                         className="px-3 py-2 md:px-4 md:py-2 cursor-pointer hover:text-blue-200 rounded-full
@@ -47,7 +46,6 @@ const Navbar = () => {
                         <span className="hidden sm:inline">Products</span>
                     </motion.button>
 
-                    {/* My Orders Button - Only show when signed in */}
                     {isSignedIn && (
                         <motion.button
                             onClick={() => router.push('/orders')}
@@ -79,7 +77,6 @@ const Navbar = () => {
                         </motion.button>
                     )}
 
-                    {/* Cart Button */}
                     <motion.div 
                         onClick={() => router.push('/cart')}
                         className="text-white cursor-pointer rounded-full
@@ -100,7 +97,6 @@ const Navbar = () => {
                         )}
                     </motion.div>
 
-                    {/* Auth Buttons */}
                     <SignedOut>
                         <SignInButton mode='modal'>
                             <motion.button

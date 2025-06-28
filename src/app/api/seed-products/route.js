@@ -63,10 +63,8 @@ export async function POST() {
   try {
     await connectDB();
     
-    // Clear existing products
     await Product.deleteMany({});
     
-    // Insert sample products
     const products = await Product.insertMany(sampleProducts);
     
     return NextResponse.json({ 
