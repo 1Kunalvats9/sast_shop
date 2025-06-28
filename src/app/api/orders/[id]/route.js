@@ -30,3 +30,29 @@ export async function PUT(request, { params }) {
     );
   }
 }
+
+export async function DELETE(request, { params }) {
+  try {
+    await connectDB();
+    
+    const order = await Order.findByIdAndDelete(params.id);
+    
+    if (!order) {
+      return NextResponse.json(
+        { success: false, error: 'Order not found' },
+        { status: 404 }
+      );
+    }
+    
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Order deleted successfully' 
+    });
+  } catch (error) {
+    console.error('Error deleting order:', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to delete order' },
+      { status: 500 }
+    );
+  }
+}
