@@ -18,12 +18,15 @@ export default function AdminDashboard() {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [imageUploading, setImageUploading] = useState(false);
   const [imagePreview, setImagePreview] = useState('');
+  const [additionalImages, setAdditionalImages] = useState([]);
+  const [additionalImagePreviews, setAdditionalImagePreviews] = useState([]);
 
   const [productForm, setProductForm] = useState({
     name: '',
     description: '',
     price: '',
     image: '',
+    images: [],
     category: '',
     stock: '',
     featured: false,
@@ -69,7 +72,7 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleImageUpload = async (file) => {
+  const handleImageUpload = async (file, isAdditional = false) => {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
@@ -95,8 +98,17 @@ export default function AdminDashboard() {
       const data = await response.json();
       
       if (data.success) {
-        setProductForm(prev => ({ ...prev, image: data.url }));
-        setImagePreview(data.url);
+        if (isAdditional) {
+          setAdditionalImages(prev => [...prev, data.url]);
+          setAdditionalImagePreviews(prev => [...prev, data.url]);
+          setProductForm(prev => ({ 
+            ...prev, 
+            images: [...prev.images, data.url] 
+          }));
+        } else {
+          setProductForm(prev => ({ ...prev, image: data.url }));
+          setImagePreview(data.url);
+        }
         toast.success('Image uploaded successfully!');
       } else {
         toast.error(data.error || 'Failed to upload image');
@@ -108,6 +120,71 @@ export default function AdminDashboard() {
     } finally {
       setImageUploading(false);
     }
+  };
+
+  const handleMultipleImageUpload = async (files) => {
+    if (!files || files.length === 0) return;
+
+    const validFiles = Array.from(files).filter(file => {
+      if (!file.type.startsWith('image/')) {
+        toast.error(`${file.name} is not an image file`);
+        return false;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error(`${file.name} is too large (max 10MB)`);
+        return false;
+      }
+      return true;
+    });
+
+    if (validFiles.length === 0) return;
+
+    setImageUploading(true);
+    const uploadPromises = validFiles.map(async (file) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      try {
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+        const data = await response.json();
+        return data.success ? data.url : null;
+      } catch (error) {
+        console.error('Error uploading file:', file.name, error);
+        return null;
+      }
+    });
+
+    try {
+      const uploadedUrls = await Promise.all(uploadPromises);
+      const successfulUploads = uploadedUrls.filter(url => url !== null);
+      
+      if (successfulUploads.length > 0) {
+        setAdditionalImages(prev => [...prev, ...successfulUploads]);
+        setAdditionalImagePreviews(prev => [...prev, ...successfulUploads]);
+        setProductForm(prev => ({ 
+          ...prev, 
+          images: [...prev.images, ...successfulUploads] 
+        }));
+        toast.success(`${successfulUploads.length} images uploaded successfully!`);
+      }
+    } catch (error) {
+      console.error('Error uploading multiple images:', error);
+      toast.error('Failed to upload some images');
+    } finally {
+      setImageUploading(false);
+    }
+  };
+
+  const removeAdditionalImage = (indexToRemove) => {
+    setAdditionalImages(prev => prev.filter((_, index) => index !== indexToRemove));
+    setAdditionalImagePreviews(prev => prev.filter((_, index) => index !== indexToRemove));
+    setProductForm(prev => ({ 
+      ...prev, 
+      images: prev.images.filter((_, index) => index !== indexToRemove) 
+    }));
   };
 
   const handleOrderStatusUpdate = async (orderId, status, adminNotes = '') => {
@@ -228,7 +305,7 @@ export default function AdminDashboard() {
     e.preventDefault();
     
     if (!productForm.image) {
-      toast.error('Please upload an image or provide an image URL');
+      toast.error('Please upload a main image or provide an image URL');
       return;
     }
 
@@ -262,11 +339,14 @@ export default function AdminDashboard() {
         setShowProductForm(false);
         setEditingProduct(null);
         setImagePreview('');
+        setAdditionalImages([]);
+        setAdditionalImagePreviews([]);
         setProductForm({
           name: '',
           description: '',
           price: '',
           image: '',
+          images: [],
           category: '',
           stock: '',
           featured: false,
@@ -314,6 +394,7 @@ export default function AdminDashboard() {
       description: product.description,
       price: product.price.toString(),
       image: product.image,
+      images: product.images || [],
       category: product.category,
       stock: product.stock?.toString() || '0',
       featured: product.featured,
@@ -323,6 +404,8 @@ export default function AdminDashboard() {
       variants: product.variants || []
     });
     setImagePreview(product.image);
+    setAdditionalImages(product.images || []);
+    setAdditionalImagePreviews(product.images || []);
     setShowProductForm(true);
   };
 
@@ -526,11 +609,14 @@ export default function AdminDashboard() {
                   setShowProductForm(true);
                   setEditingProduct(null);
                   setImagePreview('');
+                  setAdditionalImages([]);
+                  setAdditionalImagePreviews([]);
                   setProductForm({
                     name: '',
                     description: '',
                     price: '',
                     image: '',
+                    images: [],
                     category: '',
                     stock: '',
                     featured: false,
@@ -568,6 +654,12 @@ export default function AdminDashboard() {
                       <div className="absolute top-2 left-2 bg-blue-500 text-white px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1">
                         <Palette size={12} />
                         <Ruler size={12} />
+                      </div>
+                    )}
+                    {product.images && product.images.length > 0 && (
+                      <div className="absolute bottom-2 left-2 bg-black/60 text-white px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1">
+                        <ImageIcon size={12} />
+                        {product.images.length + 1}
                       </div>
                     )}
                   </div>
@@ -693,8 +785,9 @@ export default function AdminDashboard() {
                   )}
                 </div>
 
+                {/* Main Image Upload */}
                 <div>
-                  <label className="block text-sm font-medium mb-1 text-white">Product Image</label>
+                  <label className="block text-sm font-medium mb-1 text-white">Main Product Image</label>
                   <div className="space-y-3">
                     {imagePreview && (
                       <div className="relative w-full h-32 border border-gray-600 rounded overflow-hidden">
@@ -712,15 +805,15 @@ export default function AdminDashboard() {
                         onChange={(e) => {
                           const file = e.target.files?.[0];
                           if (file) {
-                            handleImageUpload(file);
+                            handleImageUpload(file, false);
                           }
                         }}
                         className="hidden"
-                        id="image-upload"
+                        id="main-image-upload"
                         disabled={imageUploading}
                       />
                       <label
-                        htmlFor="image-upload"
+                        htmlFor="main-image-upload"
                         className={`flex items-center gap-2 px-4 py-2 border border-gray-600 rounded cursor-pointer hover:bg-gray-800 transition-colors text-white ${
                           imageUploading ? 'opacity-50 cursor-not-allowed' : ''
                         }`}
@@ -733,7 +826,7 @@ export default function AdminDashboard() {
                         ) : (
                           <>
                             <Upload size={16} />
-                            Upload Image
+                            Upload Main Image
                           </>
                         )}
                       </label>
@@ -741,7 +834,7 @@ export default function AdminDashboard() {
                     <div className="text-center text-gray-400 text-sm">OR</div>
                     <input
                       type="url"
-                      placeholder="Enter image URL"
+                      placeholder="Enter main image URL"
                       value={productForm.image}
                       onChange={(e) => {
                         setProductForm({ ...productForm, image: e.target.value });
@@ -749,6 +842,68 @@ export default function AdminDashboard() {
                       }}
                       className="w-full p-2 bg-gray-800 border border-gray-600 rounded focus:outline-none focus:border-white text-white"
                     />
+                  </div>
+                </div>
+
+                {/* Additional Images Upload */}
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-white">Additional Images (Optional)</label>
+                  <div className="space-y-3">
+                    {additionalImagePreviews.length > 0 && (
+                      <div className="grid grid-cols-4 gap-2">
+                        {additionalImagePreviews.map((image, index) => (
+                          <div key={index} className="relative">
+                            <img
+                              src={image}
+                              alt={`Additional ${index + 1}`}
+                              className="w-full h-20 object-cover rounded border border-gray-600"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeAdditionalImage(index)}
+                              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={(e) => {
+                          const files = e.target.files;
+                          if (files && files.length > 0) {
+                            handleMultipleImageUpload(files);
+                          }
+                        }}
+                        className="hidden"
+                        id="additional-images-upload"
+                        disabled={imageUploading}
+                      />
+                      <label
+                        htmlFor="additional-images-upload"
+                        className={`flex items-center gap-2 px-4 py-2 border border-gray-600 rounded cursor-pointer hover:bg-gray-800 transition-colors text-white ${
+                          imageUploading ? 'opacity-50 cursor-not-allowed' : ''
+                        }`}
+                      >
+                        {imageUploading ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                            Uploading...
+                          </>
+                        ) : (
+                          <>
+                            <ImageIcon size={16} />
+                            Upload Additional Images
+                          </>
+                        )}
+                      </label>
+                    </div>
+                    <p className="text-xs text-gray-400">You can select multiple images at once. These will be shown in a carousel on the product page.</p>
                   </div>
                 </div>
 
@@ -924,6 +1079,8 @@ export default function AdminDashboard() {
                       setShowProductForm(false);
                       setEditingProduct(null);
                       setImagePreview('');
+                      setAdditionalImages([]);
+                      setAdditionalImagePreviews([]);
                     }}
                     className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white border border-gray-600 rounded transition-colors"
                   >

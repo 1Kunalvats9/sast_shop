@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { SignInButton, useAuth } from '@clerk/nextjs';
 import toast from 'react-hot-toast';
 import { useCart } from '@/context/CartContext';
+import ImageCarousel from '@/components/ImageCarousel';
 
 const ProductSection = ({ showFeaturedOnly = false }) => {
   const { isSignedIn } = useAuth();
@@ -118,6 +119,15 @@ const ProductSection = ({ showFeaturedOnly = false }) => {
     return product.stock || 0;
   };
 
+  const getProductImages = (product) => {
+    const images = [];
+    if (product.image) images.push(product.image);
+    if (product.images && product.images.length > 0) {
+      images.push(...product.images);
+    }
+    return images.length > 0 ? images : [product.image];
+  };
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -209,17 +219,15 @@ const ProductSection = ({ showFeaturedOnly = false }) => {
             transition={{ duration: 0.3 }}
           >
             <div className="relative w-full h-48 sm:h-56 md:h-64 lg:h-72 flex-shrink-0">
-              <motion.img
-                src={product.image}
-                alt={product.name}
-                className="absolute inset-0 w-full h-full object-cover rounded-t-2xl"
-                onError={(e) => { e.target.onerror = null; e.target.src='https://placehold.co/400x300/cccccc/333333?text=Image+Error'; }}
-                whileHover={{ scale: 1.05 }}
-                transition={{ duration: 0.3 }}
+              <ImageCarousel 
+                images={getProductImages(product)}
+                productName={product.name}
+                className="w-full h-full"
               />
+              
               {product.featured && (
                 <motion.div 
-                  className="absolute top-2 right-2 bg-yellow-500 text-black px-2 py-1 rounded-full text-xs font-bold"
+                  className="absolute top-2 right-2 bg-yellow-500 text-black px-2 py-1 rounded-full text-xs font-bold z-10"
                   initial={{ scale: 0, rotate: -180 }}
                   animate={{ scale: 1, rotate: 0 }}
                   transition={{ delay: index * 0.1 + 0.5, duration: 0.5 }}
@@ -229,7 +237,7 @@ const ProductSection = ({ showFeaturedOnly = false }) => {
               )}
               {product.hasVariants && (
                 <motion.div 
-                  className="absolute top-2 left-2 bg-blue-500 text-white px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1"
+                  className="absolute top-2 left-2 bg-blue-500 text-white px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1 z-10"
                   initial={{ scale: 0, rotate: -180 }}
                   animate={{ scale: 1, rotate: 0 }}
                   transition={{ delay: index * 0.1 + 0.6, duration: 0.5 }}
@@ -359,11 +367,13 @@ const ProductSection = ({ showFeaturedOnly = false }) => {
             </button>
 
             <div className="mb-4">
-              <img
-                src={selectedProduct.image}
-                alt={selectedProduct.name}
-                className="w-full h-48 object-cover rounded-lg mb-4"
-              />
+              <div className="w-full h-48 mb-4">
+                <ImageCarousel 
+                  images={getProductImages(selectedProduct)}
+                  productName={selectedProduct.name}
+                  className="w-full h-full"
+                />
+              </div>
               <h3 className="text-xl font-bold mb-2">{selectedProduct.name}</h3>
               <p className="text-2xl font-bold text-green-400 mb-4">₹{selectedProduct.price.toFixed(2)}</p>
             </div>
