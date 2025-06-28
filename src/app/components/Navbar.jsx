@@ -61,7 +61,6 @@ const Navbar = () => {
                         </motion.button>
                     )}
 
-                    {/* Admin Button */}
                     {isAdmin && (
                         <motion.button
                             onClick={() => router.push('/admin')}
