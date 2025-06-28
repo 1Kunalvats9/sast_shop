@@ -3,6 +3,7 @@ import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton } from '@cl
 import { ShoppingCart, Shield, Package, ClipboardList } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 import { useCheckRole } from '@/utils/client-checkRole';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@clerk/nextjs';
@@ -15,101 +16,129 @@ const Navbar = () => {
     const { isSignedIn } = useAuth();
 
     return (
-        <nav className="fixed top-0 overflow-hidden left-0 w-full z-50 px-2 md:px-4">
-            <div className="flex items-center justify-between max-w-7xl mx-auto py-2 px-6">
-                <div 
+        <motion.nav 
+            className="fixed top-0 left-0 w-full z-[9999] px-2 md:px-4 bg-black/20 backdrop-blur-lg border-b border-white/10"
+            initial={{ y: -100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+        >
+            <div className="flex items-center justify-between max-w-7xl mx-auto py-3 px-6">
+                <motion.div 
                     onClick={() => router.push('/')}
                     className="text-white text-2xl md:text-3xl font-extrabold tracking-wide cursor-pointer select-none"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                 >
                     SAST Shop
-                </div>
+                </motion.div>
 
-                <div className="flex items-center space-x-4 p-3">
+                <div className="flex items-center space-x-3 md:space-x-4">
                     {/* Products Button */}
-                    <button
+                    <motion.button
                         onClick={() => router.push('/products')}
-                        className="px-3 py-1 md:px-4 md:py-2 cursor-pointer hover:text-blue-200 rounded-full
-                       text-white font-medium transition-all duration-300 hover:shadow-lg shadow-xl
-                        bg-white/10 text-lg md:text-xl backdrop-blur-lg border border-white/20
+                        className="px-3 py-2 md:px-4 md:py-2 cursor-pointer hover:text-blue-200 rounded-full
+                       text-white font-medium transition-all duration-300 hover:shadow-lg
+                        bg-white/10 text-sm md:text-base backdrop-blur-lg border border-white/20
                         focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 flex items-center gap-2"
+                        whileHover={{ scale: 1.05, backgroundColor: "rgba(255, 255, 255, 0.15)" }}
+                        whileTap={{ scale: 0.95 }}
                     >
-                        <Package size={20} />
-                        <span className="hidden md:inline">Products</span>
-                    </button>
+                        <Package size={18} />
+                        <span className="hidden sm:inline">Products</span>
+                    </motion.button>
 
                     {/* My Orders Button - Only show when signed in */}
                     {isSignedIn && (
-                        <button
+                        <motion.button
                             onClick={() => router.push('/orders')}
-                            className="px-3 py-1 md:px-4 md:py-2 cursor-pointer hover:text-blue-200 rounded-full
-                           text-white font-medium transition-all duration-300 hover:shadow-lg shadow-xl
-                            bg-white/10 text-lg md:text-xl backdrop-blur-lg border border-white/20
+                            className="px-3 py-2 md:px-4 md:py-2 cursor-pointer hover:text-blue-200 rounded-full
+                           text-white font-medium transition-all duration-300 hover:shadow-lg
+                            bg-white/10 text-sm md:text-base backdrop-blur-lg border border-white/20
                             focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 flex items-center gap-2"
+                            whileHover={{ scale: 1.05, backgroundColor: "rgba(255, 255, 255, 0.15)" }}
+                            whileTap={{ scale: 0.95 }}
                         >
-                            <ClipboardList size={20} />
-                            <span className="hidden md:inline">My Orders</span>
-                        </button>
+                            <ClipboardList size={18} />
+                            <span className="hidden sm:inline">Orders</span>
+                        </motion.button>
                     )}
 
                     {/* Admin Button */}
-                    {
-                        isAdmin && 
-                        <button
+                    {isAdmin && (
+                        <motion.button
                             onClick={() => router.push('/admin')}
-                            className="px-3 py-1 md:px-4 md:py-2 cursor-pointer hover:text-blue-200 rounded-full
-                           text-white font-medium transition-all duration-300 hover:shadow-lg shadow-xl
-                            bg-white/10 text-lg md:text-xl backdrop-blur-lg border border-white/20
+                            className="px-3 py-2 md:px-4 md:py-2 cursor-pointer hover:text-blue-200 rounded-full
+                           text-white font-medium transition-all duration-300 hover:shadow-lg
+                            bg-white/10 text-sm md:text-base backdrop-blur-lg border border-white/20
                             focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 flex items-center gap-2"
+                            whileHover={{ scale: 1.05, backgroundColor: "rgba(255, 255, 255, 0.15)" }}
+                            whileTap={{ scale: 0.95 }}
                         >
-                            <Shield size={20} />
-                            <span className="hidden md:inline">Admin</span>
-                        </button>
-                    }
+                            <Shield size={18} />
+                            <span className="hidden sm:inline">Admin</span>
+                        </motion.button>
+                    )}
 
                     {/* Cart Button */}
-                    <div onClick={()=>{
-                        router.push('/cart')
-                    }} className="text-white cursor-pointer rounded-2xl shadow-xl
-                        bg-white/10 backdrop-blur-lg border border-white/20 px-2 py-1 md:px-3 md:py-2 hover:text-blue-200 transition-colors duration-200 relative">
-                        <ShoppingCart />
+                    <motion.div 
+                        onClick={() => router.push('/cart')}
+                        className="text-white cursor-pointer rounded-full
+                            bg-white/10 backdrop-blur-lg border border-white/20 px-3 py-2 hover:text-blue-200 transition-colors duration-200 relative"
+                        whileHover={{ scale: 1.05, backgroundColor: "rgba(255, 255, 255, 0.15)" }}
+                        whileTap={{ scale: 0.95 }}
+                    >
+                        <ShoppingCart size={20} />
                         {getTotalItems() > 0 && (
-                            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                            <motion.span 
+                                className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold"
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                            >
                                 {getTotalItems()}
-                            </span>
+                            </motion.span>
                         )}
-                    </div>
+                    </motion.div>
 
                     {/* Auth Buttons */}
                     <SignedOut>
                         <SignInButton mode='modal'>
-                            <button
-                                className="px-3 py-1 md:px-4 md:py-2 cursor-pointer hover:text-blue-200 rounded-full
-                             text-white font-medium transition-all duration-300 hover:shadow-lg shadow-xl
-                             bg-white/10 text-lg md:text-xl backdrop-blur-lg border border-white/20
+                            <motion.button
+                                className="px-3 py-2 md:px-4 md:py-2 cursor-pointer hover:text-blue-200 rounded-full
+                             text-white font-medium transition-all duration-300 hover:shadow-lg
+                             bg-white/10 text-sm md:text-base backdrop-blur-lg border border-white/20
                              focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50"
+                                whileHover={{ scale: 1.05, backgroundColor: "rgba(255, 255, 255, 0.15)" }}
+                                whileTap={{ scale: 0.95 }}
                             >
                                 Sign In
-                            </button>
+                            </motion.button>
                         </SignInButton>
                         <SignUpButton mode='modal'>
-                            <button
-                                className="px-3 py-1 md:px-4 md:py-2 cursor-pointer hover:text-blue-200 rounded-full
-                       text-white font-medium transition-all duration-300 hover:shadow-lg shadow-xl
-                        bg-white/10 text-lg md:text-xl backdrop-blur-lg border border-white/20
+                            <motion.button
+                                className="px-3 py-2 md:px-4 md:py-2 cursor-pointer hover:text-blue-200 rounded-full
+                       text-white font-medium transition-all duration-300 hover:shadow-lg
+                        bg-white/10 text-sm md:text-base backdrop-blur-lg border border-white/20
                         focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50"
+                                whileHover={{ scale: 1.05, backgroundColor: "rgba(255, 255, 255, 0.15)" }}
+                                whileTap={{ scale: 0.95 }}
                             >
                                 Signup
-                            </button>
+                            </motion.button>
                         </SignUpButton>
                     </SignedOut>
 
                     <SignedIn>
-                        <UserButton />
+                        <motion.div
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                        >
+                            <UserButton />
+                        </motion.div>
                     </SignedIn>
-
                 </div>
             </div>
-        </nav>
+        </motion.nav>
     );
 };
 
