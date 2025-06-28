@@ -17,12 +17,12 @@ const Navbar = () => {
 
     return (
         <motion.nav 
-            className="fixed top-0 left-0 w-full z-[9999] px-2 md:px-4 bg-black/20 backdrop-blur-lg border-b border-white/10"
+            className="fixed top-0 left-0 w-full z-[9999] px-2 md:px-4 bg-black/80 backdrop-blur-xl border-b border-white/20 shadow-lg"
             initial={{ y: -100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.6, ease: "easeOut" }}
         >
-            <div className="flex items-center justify-between max-w-7xl mx-auto py-3 px-6">
+            <div className="flex items-center justify-between max-w-7xl mx-auto py-4 px-6">
                 <motion.div 
                     onClick={() => router.push('/')}
                     className="text-white text-2xl md:text-3xl font-extrabold tracking-wide cursor-pointer select-none"
@@ -38,9 +38,9 @@ const Navbar = () => {
                         onClick={() => router.push('/products')}
                         className="px-3 py-2 md:px-4 md:py-2 cursor-pointer hover:text-blue-200 rounded-full
                        text-white font-medium transition-all duration-300 hover:shadow-lg
-                        bg-white/10 text-sm md:text-base backdrop-blur-lg border border-white/20
+                        bg-white/20 text-sm md:text-base backdrop-blur-lg border border-white/30
                         focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 flex items-center gap-2"
-                        whileHover={{ scale: 1.05, backgroundColor: "rgba(255, 255, 255, 0.15)" }}
+                        whileHover={{ scale: 1.05, backgroundColor: "rgba(255, 255, 255, 0.25)" }}
                         whileTap={{ scale: 0.95 }}
                     >
                         <Package size={18} />
@@ -53,9 +53,9 @@ const Navbar = () => {
                             onClick={() => router.push('/orders')}
                             className="px-3 py-2 md:px-4 md:py-2 cursor-pointer hover:text-blue-200 rounded-full
                            text-white font-medium transition-all duration-300 hover:shadow-lg
-                            bg-white/10 text-sm md:text-base backdrop-blur-lg border border-white/20
+                            bg-white/20 text-sm md:text-base backdrop-blur-lg border border-white/30
                             focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 flex items-center gap-2"
-                            whileHover={{ scale: 1.05, backgroundColor: "rgba(255, 255, 255, 0.15)" }}
+                            whileHover={{ scale: 1.05, backgroundColor: "rgba(255, 255, 255, 0.25)" }}
                             whileTap={{ scale: 0.95 }}
                         >
                             <ClipboardList size={18} />
@@ -69,9 +69,9 @@ const Navbar = () => {
                             onClick={() => router.push('/admin')}
                             className="px-3 py-2 md:px-4 md:py-2 cursor-pointer hover:text-blue-200 rounded-full
                            text-white font-medium transition-all duration-300 hover:shadow-lg
-                            bg-white/10 text-sm md:text-base backdrop-blur-lg border border-white/20
+                            bg-white/20 text-sm md:text-base backdrop-blur-lg border border-white/30
                             focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 flex items-center gap-2"
-                            whileHover={{ scale: 1.05, backgroundColor: "rgba(255, 255, 255, 0.15)" }}
+                            whileHover={{ scale: 1.05, backgroundColor: "rgba(255, 255, 255, 0.25)" }}
                             whileTap={{ scale: 0.95 }}
                         >
                             <Shield size={18} />
@@ -83,8 +83,8 @@ const Navbar = () => {
                     <motion.div 
                         onClick={() => router.push('/cart')}
                         className="text-white cursor-pointer rounded-full
-                            bg-white/10 backdrop-blur-lg border border-white/20 px-3 py-2 hover:text-blue-200 transition-colors duration-200 relative"
-                        whileHover={{ scale: 1.05, backgroundColor: "rgba(255, 255, 255, 0.15)" }}
+                            bg-white/20 backdrop-blur-lg border border-white/30 px-3 py-2 hover:text-blue-200 transition-colors duration-200 relative"
+                        whileHover={{ scale: 1.05, backgroundColor: "rgba(255, 255, 255, 0.25)" }}
                         whileTap={{ scale: 0.95 }}
                     >
                         <ShoppingCart size={20} />
@@ -106,9 +106,9 @@ const Navbar = () => {
                             <motion.button
                                 className="px-3 py-2 md:px-4 md:py-2 cursor-pointer hover:text-blue-200 rounded-full
                              text-white font-medium transition-all duration-300 hover:shadow-lg
-                             bg-white/10 text-sm md:text-base backdrop-blur-lg border border-white/20
+                             bg-white/20 text-sm md:text-base backdrop-blur-lg border border-white/30
                              focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50"
-                                whileHover={{ scale: 1.05, backgroundColor: "rgba(255, 255, 255, 0.15)" }}
+                                whileHover={{ scale: 1.05, backgroundColor: "rgba(255, 255, 255, 0.25)" }}
                                 whileTap={{ scale: 0.95 }}
                             >
                                 Sign In
@@ -118,9 +118,9 @@ const Navbar = () => {
                             <motion.button
                                 className="px-3 py-2 md:px-4 md:py-2 cursor-pointer hover:text-blue-200 rounded-full
                        text-white font-medium transition-all duration-300 hover:shadow-lg
-                        bg-white/10 text-sm md:text-base backdrop-blur-lg border border-white/20
+                        bg-white/20 text-sm md:text-base backdrop-blur-lg border border-white/30
                         focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50"
-                                whileHover={{ scale: 1.05, backgroundColor: "rgba(255, 255, 255, 0.15)" }}
+                                whileHover={{ scale: 1.05, backgroundColor: "rgba(255, 255, 255, 0.25)" }}
                                 whileTap={{ scale: 0.95 }}
                             >
                                 Signup
