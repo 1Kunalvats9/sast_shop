@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 const ImageCarousel = ({ images, productName, className = "" }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
   // Ensure we have at least one image
   const imageList = images && images.length > 0 ? images : [images].filter(Boolean);
@@ -32,7 +33,11 @@ const ImageCarousel = ({ images, productName, className = "" }) => {
 
   return (
     <>
-      <div className={`relative group ${className}`}>
+      <div 
+        className={`relative group ${className}`}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
         {/* Main Image */}
         <motion.div 
           className="relative w-full h-full overflow-hidden rounded-lg cursor-pointer"
@@ -54,7 +59,7 @@ const ImageCarousel = ({ images, productName, className = "" }) => {
           
           {/* Image Counter */}
           {imageList.length > 1 && (
-            <div className="absolute top-2 right-2 bg-black/60 text-white px-2 py-1 rounded-full text-xs font-medium">
+            <div className="absolute top-2 right-2 bg-black/70 text-white px-2 py-1 rounded-full text-xs font-medium z-10">
               {currentIndex + 1}/{imageList.length}
             </div>
           )}
@@ -68,11 +73,16 @@ const ImageCarousel = ({ images, productName, className = "" }) => {
                 e.stopPropagation();
                 prevImage();
               }}
-              className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+              className={`absolute left-2 top-1/2 -translate-y-1/2 bg-black/70 hover:bg-black/90 text-white p-2 rounded-full transition-all duration-300 z-20 ${
+                isHovered ? 'opacity-100 visible' : 'opacity-0 invisible'
+              }`}
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: isHovered ? 1 : 0 }}
+              transition={{ duration: 0.2 }}
             >
-              <ChevronLeft size={16} />
+              <ChevronLeft size={18} />
             </motion.button>
 
             <motion.button
@@ -80,18 +90,25 @@ const ImageCarousel = ({ images, productName, className = "" }) => {
                 e.stopPropagation();
                 nextImage();
               }}
-              className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+              className={`absolute right-2 top-1/2 -translate-y-1/2 bg-black/70 hover:bg-black/90 text-white p-2 rounded-full transition-all duration-300 z-20 ${
+                isHovered ? 'opacity-100 visible' : 'opacity-0 invisible'
+              }`}
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: isHovered ? 1 : 0 }}
+              transition={{ duration: 0.2 }}
             >
-              <ChevronRight size={16} />
+              <ChevronRight size={18} />
             </motion.button>
           </>
         )}
 
         {/* Dots Indicator */}
         {imageList.length > 1 && (
-          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+          <div className={`absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 z-10 transition-opacity duration-300 ${
+            isHovered ? 'opacity-100' : 'opacity-70'
+          }`}>
             {imageList.map((_, index) => (
               <button
                 key={index}
@@ -101,11 +118,39 @@ const ImageCarousel = ({ images, productName, className = "" }) => {
                 }}
                 className={`w-2 h-2 rounded-full transition-all duration-300 ${
                   index === currentIndex 
-                    ? 'bg-white scale-110' 
-                    : 'bg-white/50 hover:bg-white/75'
+                    ? 'bg-white scale-110 shadow-lg' 
+                    : 'bg-white/60 hover:bg-white/90'
                 }`}
               />
             ))}
+          </div>
+        )}
+
+        {/* Mobile Touch Indicators (always visible on mobile) */}
+        {imageList.length > 1 && (
+          <div className="md:hidden absolute inset-0 flex">
+            <div 
+              className="w-1/2 h-full flex items-center justify-start pl-2"
+              onClick={(e) => {
+                e.stopPropagation();
+                prevImage();
+              }}
+            >
+              <div className="bg-black/50 text-white p-1 rounded-full">
+                <ChevronLeft size={16} />
+              </div>
+            </div>
+            <div 
+              className="w-1/2 h-full flex items-center justify-end pr-2"
+              onClick={(e) => {
+                e.stopPropagation();
+                nextImage();
+              }}
+            >
+              <div className="bg-black/50 text-white p-1 rounded-full">
+                <ChevronRight size={16} />
+              </div>
+            </div>
           </div>
         )}
       </div>
@@ -130,7 +175,7 @@ const ImageCarousel = ({ images, productName, className = "" }) => {
               {/* Close Button */}
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="absolute top-4 right-4 z-10 bg-black/60 hover:bg-black/80 text-white p-2 rounded-full transition-colors"
+                className="absolute top-4 right-4 z-10 bg-black/70 hover:bg-black/90 text-white p-2 rounded-full transition-colors"
               >
                 <X size={24} />
               </button>
@@ -151,14 +196,14 @@ const ImageCarousel = ({ images, productName, className = "" }) => {
                 <>
                   <button
                     onClick={prevImage}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white p-3 rounded-full transition-colors"
+                    className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/70 hover:bg-black/90 text-white p-3 rounded-full transition-colors"
                   >
                     <ChevronLeft size={24} />
                   </button>
 
                   <button
                     onClick={nextImage}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white p-3 rounded-full transition-colors"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/70 hover:bg-black/90 text-white p-3 rounded-full transition-colors"
                   >
                     <ChevronRight size={24} />
                   </button>
@@ -184,7 +229,7 @@ const ImageCarousel = ({ images, productName, className = "" }) => {
 
               {/* Image Counter in Modal */}
               {imageList.length > 1 && (
-                <div className="absolute top-4 left-4 bg-black/60 text-white px-3 py-2 rounded-full text-sm font-medium">
+                <div className="absolute top-4 left-4 bg-black/70 text-white px-3 py-2 rounded-full text-sm font-medium">
                   {currentIndex + 1} of {imageList.length}
                 </div>
               )}
