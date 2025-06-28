@@ -210,13 +210,8 @@ const ProductSection = ({ showFeaturedOnly = false }) => {
         {products.map((product, index) => (
           <motion.div
             key={product._id}
-            className="relative flex flex-col overflow-hidden bg-gray-800 rounded-2xl border border-gray-700 shadow-lg transition-all duration-300 ease-in-out hover:shadow-xl hover:scale-[1.01] hover:border-blue-500"
+            className="relative flex flex-col overflow-hidden bg-gray-800 rounded-2xl border border-gray-700 shadow-lg transition-all duration-300 ease-in-out"
             variants={cardVariants}
-            whileHover={{ 
-              y: -10,
-              boxShadow: "0 25px 50px rgba(59, 130, 246, 0.15)"
-            }}
-            transition={{ duration: 0.3 }}
           >
             <div className="relative w-full h-48 sm:h-56 md:h-64 lg:h-72 flex-shrink-0">
               <ImageCarousel 
@@ -246,7 +241,6 @@ const ProductSection = ({ showFeaturedOnly = false }) => {
                   <Ruler size={12} />
                 </motion.div>
               )}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300 rounded-t-2xl"></div>
             </div>
             
             <div className="p-5 flex flex-col flex-grow">
