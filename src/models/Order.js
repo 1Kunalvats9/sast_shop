@@ -27,7 +27,15 @@ const OrderSchema = new mongoose.Schema({
       required: true,
       min: 1
     },
-    image: String
+    image: String,
+    selectedSize: {
+      type: String,
+      default: null
+    },
+    selectedColor: {
+      type: String,
+      default: null
+    }
   }],
   deliveryAddress: {
     fullName: {

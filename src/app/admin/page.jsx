@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useCheckRole } from '@/utils/client-checkRole';
 import { useRouter } from 'next/navigation';
-import { Package, ShoppingBag, Plus, Edit, Trash2, Eye, Check, X, Clock, Upload, Image as ImageIcon } from 'lucide-react';
+import { Package, ShoppingBag, Plus, Edit, Trash2, Eye, Check, X, Clock, Upload, Image as ImageIcon, Palette, Ruler } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Navbar from '../components/Navbar';
 
@@ -26,8 +26,15 @@ export default function AdminDashboard() {
     image: '',
     category: '',
     stock: '',
-    featured: false
+    featured: false,
+    hasVariants: false,
+    availableSizes: [],
+    availableColors: [],
+    variants: []
   });
+
+  const [newSize, setNewSize] = useState('');
+  const [newColor, setNewColor] = useState('');
 
   useEffect(() => {
     if (!isAdmin) {
@@ -65,13 +72,11 @@ export default function AdminDashboard() {
   const handleImageUpload = async (file) => {
     if (!file) return;
 
-    // Validate file type
     if (!file.type.startsWith('image/')) {
       toast.error('Please select an image file');
       return;
     }
 
-    // Validate file size (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
       toast.error('File size must be less than 10MB');
       return;
@@ -148,11 +153,87 @@ export default function AdminDashboard() {
     }
   };
 
+  const addSize = () => {
+    if (newSize.trim() && !productForm.availableSizes.includes(newSize.trim())) {
+      setProductForm(prev => ({
+        ...prev,
+        availableSizes: [...prev.availableSizes, newSize.trim()]
+      }));
+      setNewSize('');
+      generateVariants();
+    }
+  };
+
+  const removeSize = (sizeToRemove) => {
+    setProductForm(prev => ({
+      ...prev,
+      availableSizes: prev.availableSizes.filter(size => size !== sizeToRemove)
+    }));
+    generateVariants();
+  };
+
+  const addColor = () => {
+    if (newColor.trim() && !productForm.availableColors.includes(newColor.trim())) {
+      setProductForm(prev => ({
+        ...prev,
+        availableColors: [...prev.availableColors, newColor.trim()]
+      }));
+      setNewColor('');
+      generateVariants();
+    }
+  };
+
+  const removeColor = (colorToRemove) => {
+    setProductForm(prev => ({
+      ...prev,
+      availableColors: prev.availableColors.filter(color => color !== colorToRemove)
+    }));
+    generateVariants();
+  };
+
+  const generateVariants = () => {
+    if (!productForm.hasVariants) return;
+
+    const newVariants = [];
+    productForm.availableSizes.forEach(size => {
+      productForm.availableColors.forEach(color => {
+        const existingVariant = productForm.variants.find(v => v.size === size && v.color === color);
+        newVariants.push({
+          size,
+          color,
+          stock: existingVariant ? existingVariant.stock : 0,
+          available: existingVariant ? existingVariant.available : true
+        });
+      });
+    });
+
+    setProductForm(prev => ({
+      ...prev,
+      variants: newVariants
+    }));
+  };
+
+  const updateVariant = (size, color, field, value) => {
+    setProductForm(prev => ({
+      ...prev,
+      variants: prev.variants.map(variant => 
+        variant.size === size && variant.color === color
+          ? { ...variant, [field]: value }
+          : variant
+      )
+    }));
+  };
+
   const handleProductSubmit = async (e) => {
     e.preventDefault();
     
     if (!productForm.image) {
       toast.error('Please upload an image or provide an image URL');
+      return;
+    }
+
+    if (productForm.hasVariants && productForm.variants.length === 0) {
+      toast.error('Please add at least one size and color combination');
       return;
     }
 
@@ -162,14 +243,16 @@ export default function AdminDashboard() {
       const url = editingProduct ? `/api/products/${editingProduct._id}` : '/api/products';
       const method = editingProduct ? 'PUT' : 'POST';
 
+      const submitData = {
+        ...productForm,
+        price: parseFloat(productForm.price),
+        stock: productForm.hasVariants ? 0 : parseInt(productForm.stock)
+      };
+
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...productForm,
-          price: parseFloat(productForm.price),
-          stock: parseInt(productForm.stock)
-        })
+        body: JSON.stringify(submitData)
       });
 
       const data = await response.json();
@@ -186,7 +269,11 @@ export default function AdminDashboard() {
           image: '',
           category: '',
           stock: '',
-          featured: false
+          featured: false,
+          hasVariants: false,
+          availableSizes: [],
+          availableColors: [],
+          variants: []
         });
       } else {
         toast.error('Failed to save product');
@@ -228,8 +315,12 @@ export default function AdminDashboard() {
       price: product.price.toString(),
       image: product.image,
       category: product.category,
-      stock: product.stock.toString(),
-      featured: product.featured
+      stock: product.stock?.toString() || '0',
+      featured: product.featured,
+      hasVariants: product.hasVariants || false,
+      availableSizes: product.availableSizes || [],
+      availableColors: product.availableColors || [],
+      variants: product.variants || []
     });
     setImagePreview(product.image);
     setShowProductForm(true);
@@ -244,6 +335,15 @@ export default function AdminDashboard() {
       case 'delivered': return 'text-purple-600 bg-purple-50 border-purple-200';
       default: return 'text-gray-600 bg-gray-50 border-gray-200';
     }
+  };
+
+  const getTotalStock = (product) => {
+    if (product.hasVariants) {
+      return product.variants?.reduce((total, variant) => {
+        return variant.available ? total + variant.stock : total;
+      }, 0) || 0;
+    }
+    return product.stock || 0;
   };
 
   if (!isAdmin) {
@@ -327,8 +427,17 @@ export default function AdminDashboard() {
                       <h4 className="font-medium text-gray-300 mb-2">Items ({order.items.length})</h4>
                       <div className="space-y-2">
                         {order.items.map((item, index) => (
-                          <div key={index} className="flex justify-between text-sm">
-                            <span className="text-gray-400">{item.name} x{item.quantity}</span>
+                          <div key={index} className="flex justify-between text-sm bg-gray-800 p-3 rounded">
+                            <div>
+                              <span className="text-gray-400">{item.name} x{item.quantity}</span>
+                              {(item.selectedSize || item.selectedColor) && (
+                                <div className="text-xs text-gray-500 mt-1">
+                                  {item.selectedSize && <span>Size: {item.selectedSize}</span>}
+                                  {item.selectedSize && item.selectedColor && <span> | </span>}
+                                  {item.selectedColor && <span>Color: {item.selectedColor}</span>}
+                                </div>
+                              )}
+                            </div>
                             <span className="text-gray-300">₹{(item.price * item.quantity).toFixed(2)}</span>
                           </div>
                         ))}
@@ -386,7 +495,6 @@ export default function AdminDashboard() {
                       </button>
                     )}
 
-                    {/* Delete Order Button - Available for all statuses */}
                     <button
                       onClick={() => handleDeleteOrder(order._id)}
                       className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white border border-gray-600 rounded-lg transition-colors ml-auto"
@@ -425,7 +533,11 @@ export default function AdminDashboard() {
                     image: '',
                     category: '',
                     stock: '',
-                    featured: false
+                    featured: false,
+                    hasVariants: false,
+                    availableSizes: [],
+                    availableColors: [],
+                    variants: []
                   });
                 }}
                 className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-200 text-black rounded-lg transition-colors"
@@ -452,14 +564,38 @@ export default function AdminDashboard() {
                         Featured
                       </div>
                     )}
+                    {product.hasVariants && (
+                      <div className="absolute top-2 left-2 bg-blue-500 text-white px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1">
+                        <Palette size={12} />
+                        <Ruler size={12} />
+                      </div>
+                    )}
                   </div>
                   <div className="p-4">
                     <h3 className="font-semibold text-lg mb-2 text-white">{product.name}</h3>
                     <p className="text-gray-400 text-sm mb-3 line-clamp-2">{product.description}</p>
                     <div className="flex justify-between items-center mb-3">
                       <span className="text-xl font-bold text-green-400">₹{product.price}</span>
-                      <span className="text-sm text-gray-400">Stock: {product.stock}</span>
+                      <span className="text-sm text-gray-400">Stock: {getTotalStock(product)}</span>
                     </div>
+                    
+                    {product.hasVariants && (
+                      <div className="mb-3 text-xs text-gray-400">
+                        <div className="flex flex-wrap gap-1 mb-1">
+                          <span className="font-medium">Sizes:</span>
+                          {product.availableSizes?.map(size => (
+                            <span key={size} className="bg-gray-700 px-1 rounded">{size}</span>
+                          ))}
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          <span className="font-medium">Colors:</span>
+                          {product.availableColors?.map(color => (
+                            <span key={color} className="bg-gray-700 px-1 rounded">{color}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleEditProduct(product)}
@@ -493,21 +629,34 @@ export default function AdminDashboard() {
         {/* Product Form Modal */}
         {showProductForm && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-70 backdrop-blur-sm">
-            <div className="bg-gray-900 border border-gray-700 rounded-xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-gray-900 border border-gray-700 rounded-xl p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
               <h3 className="text-xl font-semibold mb-4 text-white">
                 {editingProduct ? 'Edit Product' : 'Add New Product'}
               </h3>
               <form onSubmit={handleProductSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1 text-white">Name</label>
-                  <input
-                    type="text"
-                    value={productForm.name}
-                    onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
-                    className="w-full p-2 bg-gray-800 border border-gray-600 rounded focus:outline-none focus:border-white text-white"
-                    required
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1 text-white">Name</label>
+                    <input
+                      type="text"
+                      value={productForm.name}
+                      onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
+                      className="w-full p-2 bg-gray-800 border border-gray-600 rounded focus:outline-none focus:border-white text-white"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1 text-white">Category</label>
+                    <input
+                      type="text"
+                      value={productForm.category}
+                      onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}
+                      className="w-full p-2 bg-gray-800 border border-gray-600 rounded focus:outline-none focus:border-white text-white"
+                      required
+                    />
+                  </div>
                 </div>
+
                 <div>
                   <label className="block text-sm font-medium mb-1 text-white">Description</label>
                   <textarea
@@ -517,6 +666,7 @@ export default function AdminDashboard() {
                     required
                   />
                 </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium mb-1 text-white">Price</label>
@@ -529,17 +679,20 @@ export default function AdminDashboard() {
                       required
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1 text-white">Stock</label>
-                    <input
-                      type="number"
-                      value={productForm.stock}
-                      onChange={(e) => setProductForm({ ...productForm, stock: e.target.value })}
-                      className="w-full p-2 bg-gray-800 border border-gray-600 rounded focus:outline-none focus:border-white text-white"
-                      required
-                    />
-                  </div>
+                  {!productForm.hasVariants && (
+                    <div>
+                      <label className="block text-sm font-medium mb-1 text-white">Stock</label>
+                      <input
+                        type="number"
+                        value={productForm.stock}
+                        onChange={(e) => setProductForm({ ...productForm, stock: e.target.value })}
+                        className="w-full p-2 bg-gray-800 border border-gray-600 rounded focus:outline-none focus:border-white text-white"
+                        required
+                      />
+                    </div>
+                  )}
                 </div>
+
                 <div>
                   <label className="block text-sm font-medium mb-1 text-white">Product Image</label>
                   <div className="space-y-3">
@@ -598,16 +751,7 @@ export default function AdminDashboard() {
                     />
                   </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1 text-white">Category</label>
-                  <input
-                    type="text"
-                    value={productForm.category}
-                    onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}
-                    className="w-full p-2 bg-gray-800 border border-gray-600 rounded focus:outline-none focus:border-white text-white"
-                    required
-                  />
-                </div>
+
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
@@ -618,6 +762,154 @@ export default function AdminDashboard() {
                   />
                   <label htmlFor="featured" className="text-sm text-white">Featured Product</label>
                 </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="hasVariants"
+                    checked={productForm.hasVariants}
+                    onChange={(e) => {
+                      setProductForm({ 
+                        ...productForm, 
+                        hasVariants: e.target.checked,
+                        variants: e.target.checked ? productForm.variants : []
+                      });
+                    }}
+                    className="rounded"
+                  />
+                  <label htmlFor="hasVariants" className="text-sm text-white">Has Size/Color Variants</label>
+                </div>
+
+                {productForm.hasVariants && (
+                  <div className="space-y-4 border border-gray-600 rounded p-4">
+                    <h4 className="text-lg font-medium text-white">Variant Configuration</h4>
+                    
+                    {/* Sizes */}
+                    <div>
+                      <label className="block text-sm font-medium mb-2 text-white">Available Sizes</label>
+                      <div className="flex gap-2 mb-2">
+                        <input
+                          type="text"
+                          value={newSize}
+                          onChange={(e) => setNewSize(e.target.value)}
+                          placeholder="Add size (e.g., S, M, L, XL)"
+                          className="flex-1 p-2 bg-gray-800 border border-gray-600 rounded focus:outline-none focus:border-white text-white"
+                          onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addSize())}
+                        />
+                        <button
+                          type="button"
+                          onClick={addSize}
+                          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
+                        >
+                          Add
+                        </button>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {productForm.availableSizes.map(size => (
+                          <span key={size} className="bg-gray-700 text-white px-3 py-1 rounded-full text-sm flex items-center gap-2">
+                            {size}
+                            <button
+                              type="button"
+                              onClick={() => removeSize(size)}
+                              className="text-red-400 hover:text-red-300"
+                            >
+                              ×
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Colors */}
+                    <div>
+                      <label className="block text-sm font-medium mb-2 text-white">Available Colors</label>
+                      <div className="flex gap-2 mb-2">
+                        <input
+                          type="text"
+                          value={newColor}
+                          onChange={(e) => setNewColor(e.target.value)}
+                          placeholder="Add color (e.g., Red, Blue, Black)"
+                          className="flex-1 p-2 bg-gray-800 border border-gray-600 rounded focus:outline-none focus:border-white text-white"
+                          onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addColor())}
+                        />
+                        <button
+                          type="button"
+                          onClick={addColor}
+                          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
+                        >
+                          Add
+                        </button>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {productForm.availableColors.map(color => (
+                          <span key={color} className="bg-gray-700 text-white px-3 py-1 rounded-full text-sm flex items-center gap-2">
+                            {color}
+                            <button
+                              type="button"
+                              onClick={() => removeColor(color)}
+                              className="text-red-400 hover:text-red-300"
+                            >
+                              ×
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Variants Table */}
+                    {productForm.variants.length > 0 && (
+                      <div>
+                        <label className="block text-sm font-medium mb-2 text-white">Variant Stock & Availability</label>
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-sm text-white">
+                            <thead>
+                              <tr className="border-b border-gray-600">
+                                <th className="text-left p-2">Size</th>
+                                <th className="text-left p-2">Color</th>
+                                <th className="text-left p-2">Stock</th>
+                                <th className="text-left p-2">Available</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {productForm.variants.map((variant, index) => (
+                                <tr key={`${variant.size}-${variant.color}`} className="border-b border-gray-700">
+                                  <td className="p-2">{variant.size}</td>
+                                  <td className="p-2">{variant.color}</td>
+                                  <td className="p-2">
+                                    <input
+                                      type="number"
+                                      value={variant.stock}
+                                      onChange={(e) => updateVariant(variant.size, variant.color, 'stock', parseInt(e.target.value) || 0)}
+                                      className="w-20 p-1 bg-gray-800 border border-gray-600 rounded text-white"
+                                      min="0"
+                                    />
+                                  </td>
+                                  <td className="p-2">
+                                    <input
+                                      type="checkbox"
+                                      checked={variant.available}
+                                      onChange={(e) => updateVariant(variant.size, variant.color, 'available', e.target.checked)}
+                                      className="rounded"
+                                    />
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={generateVariants}
+                      className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded transition-colors"
+                    >
+                      Generate Variants
+                    </button>
+                  </div>
+                )}
+
                 <div className="flex gap-3 pt-4">
                   <button
                     type="submit"
