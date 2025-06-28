@@ -4,6 +4,7 @@ import { useCheckRole } from '@/utils/client-checkRole';
 import { useRouter } from 'next/navigation';
 import { Package, ShoppingBag, Plus, Edit, Trash2, Eye, Check, X, Clock, Upload, Image as ImageIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
+import Navbar from '../components/Navbar';
 
 export default function AdminDashboard() {
   const isAdmin = useCheckRole('admin');
@@ -229,21 +230,22 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-white text-black">
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-4xl font-bold mb-8 text-center text-black">
+    <div className="min-h-screen bg-black text-white">
+      <Navbar />
+      <div className="container mx-auto px-4 py-8 pt-24">
+        <h1 className="text-4xl font-bold mb-8 text-center text-white">
           Admin Dashboard
         </h1>
 
         {/* Tab Navigation */}
         <div className="flex justify-center mb-8">
-          <div className="bg-gray-100 border border-gray-300 rounded-xl p-2 flex gap-2">
+          <div className="bg-gray-900 border border-gray-700 rounded-xl p-2 flex gap-2">
             <button
               onClick={() => setActiveTab('orders')}
               className={`px-6 py-3 rounded-lg font-medium transition-all duration-300 flex items-center gap-2 ${
                 activeTab === 'orders'
-                  ? 'bg-black text-white shadow-lg'
-                  : 'text-gray-600 hover:text-black hover:bg-gray-200'
+                  ? 'bg-white text-black shadow-lg'
+                  : 'text-gray-400 hover:text-white hover:bg-gray-800'
               }`}
             >
               <ShoppingBag size={20} />
@@ -253,8 +255,8 @@ export default function AdminDashboard() {
               onClick={() => setActiveTab('products')}
               className={`px-6 py-3 rounded-lg font-medium transition-all duration-300 flex items-center gap-2 ${
                 activeTab === 'products'
-                  ? 'bg-black text-white shadow-lg'
-                  : 'text-gray-600 hover:text-black hover:bg-gray-200'
+                  ? 'bg-white text-black shadow-lg'
+                  : 'text-gray-400 hover:text-white hover:bg-gray-800'
               }`}
             >
               <Package size={20} />
@@ -267,8 +269,8 @@ export default function AdminDashboard() {
         {activeTab === 'orders' && (
           <div className="space-y-6">
             <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-semibold text-black">Order Management</h2>
-              <div className="text-sm text-gray-600">
+              <h2 className="text-2xl font-semibold text-white">Order Management</h2>
+              <div className="text-sm text-gray-400">
                 Total Orders: {orders.length}
               </div>
             </div>
@@ -277,23 +279,23 @@ export default function AdminDashboard() {
               {orders.map((order) => (
                 <div
                   key={order._id}
-                  className="bg-white border border-gray-300 rounded-xl p-6 hover:border-gray-400 transition-all duration-300 shadow-sm"
+                  className="bg-gray-900 border border-gray-700 rounded-xl p-6 hover:border-gray-600 transition-all duration-300"
                 >
                   <div className="flex justify-between items-start mb-4">
                     <div>
-                      <h3 className="text-lg font-semibold text-black">
+                      <h3 className="text-lg font-semibold text-white">
                         Order #{order.orderId}
                       </h3>
-                      <p className="text-gray-600 text-sm">
+                      <p className="text-gray-400 text-sm">
                         {new Date(order.createdAt).toLocaleDateString()}
                       </p>
-                      <p className="text-gray-800">{order.userEmail}</p>
+                      <p className="text-gray-300">{order.userEmail}</p>
                     </div>
                     <div className="text-right">
                       <div className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(order.status)}`}>
                         {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                       </div>
-                      <p className="text-xl font-bold text-green-600 mt-2">
+                      <p className="text-xl font-bold text-green-400 mt-2">
                         ₹{order.totalAmount.toFixed(2)}
                       </p>
                     </div>
@@ -301,19 +303,19 @@ export default function AdminDashboard() {
 
                   <div className="grid md:grid-cols-2 gap-4 mb-4">
                     <div>
-                      <h4 className="font-medium text-gray-800 mb-2">Items ({order.items.length})</h4>
+                      <h4 className="font-medium text-gray-300 mb-2">Items ({order.items.length})</h4>
                       <div className="space-y-2">
                         {order.items.map((item, index) => (
                           <div key={index} className="flex justify-between text-sm">
-                            <span className="text-gray-600">{item.name} x{item.quantity}</span>
-                            <span className="text-gray-800">₹{(item.price * item.quantity).toFixed(2)}</span>
+                            <span className="text-gray-400">{item.name} x{item.quantity}</span>
+                            <span className="text-gray-300">₹{(item.price * item.quantity).toFixed(2)}</span>
                           </div>
                         ))}
                       </div>
                     </div>
                     <div>
-                      <h4 className="font-medium text-gray-800 mb-2">Delivery Address</h4>
-                      <div className="text-sm text-gray-600">
+                      <h4 className="font-medium text-gray-300 mb-2">Delivery Address</h4>
+                      <div className="text-sm text-gray-400">
                         <p>{order.deliveryAddress.fullName}</p>
                         <p>{order.deliveryAddress.addressLine1}</p>
                         {order.deliveryAddress.addressLine2 && <p>{order.deliveryAddress.addressLine2}</p>}
@@ -324,17 +326,17 @@ export default function AdminDashboard() {
                   </div>
 
                   {order.status === 'pending' && (
-                    <div className="flex gap-3 pt-4 border-t border-gray-200">
+                    <div className="flex gap-3 pt-4 border-t border-gray-700">
                       <button
                         onClick={() => handleOrderStatusUpdate(order._id, 'approved')}
-                        className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                        className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-200 text-black rounded-lg transition-colors"
                       >
                         <Check size={16} />
                         Approve
                       </button>
                       <button
                         onClick={() => handleOrderStatusUpdate(order._id, 'rejected')}
-                        className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                        className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white border border-gray-600 rounded-lg transition-colors"
                       >
                         <X size={16} />
                         Reject
@@ -343,10 +345,10 @@ export default function AdminDashboard() {
                   )}
 
                   {order.status === 'approved' && (
-                    <div className="flex gap-3 pt-4 border-t border-gray-200">
+                    <div className="flex gap-3 pt-4 border-t border-gray-700">
                       <button
                         onClick={() => handleOrderStatusUpdate(order._id, 'shipped')}
-                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                        className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-200 text-black rounded-lg transition-colors"
                       >
                         <Package size={16} />
                         Mark as Shipped
@@ -355,10 +357,10 @@ export default function AdminDashboard() {
                   )}
 
                   {order.status === 'shipped' && (
-                    <div className="flex gap-3 pt-4 border-t border-gray-200">
+                    <div className="flex gap-3 pt-4 border-t border-gray-700">
                       <button
                         onClick={() => handleOrderStatusUpdate(order._id, 'delivered')}
-                        className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+                        className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-200 text-black rounded-lg transition-colors"
                       >
                         <Check size={16} />
                         Mark as Delivered
@@ -369,7 +371,7 @@ export default function AdminDashboard() {
               ))}
 
               {orders.length === 0 && (
-                <div className="text-center py-12 text-gray-600">
+                <div className="text-center py-12 text-gray-400">
                   <ShoppingBag size={48} className="mx-auto mb-4 opacity-50" />
                   <p>No orders found</p>
                 </div>
@@ -382,7 +384,7 @@ export default function AdminDashboard() {
         {activeTab === 'products' && (
           <div className="space-y-6">
             <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-semibold text-black">Product Management</h2>
+              <h2 className="text-2xl font-semibold text-white">Product Management</h2>
               <button
                 onClick={() => {
                   setShowProductForm(true);
@@ -398,7 +400,7 @@ export default function AdminDashboard() {
                     featured: false
                   });
                 }}
-                className="flex items-center gap-2 px-4 py-2 bg-black hover:bg-gray-800 text-white rounded-lg transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-200 text-black rounded-lg transition-colors"
               >
                 <Plus size={20} />
                 Add Product
@@ -409,7 +411,7 @@ export default function AdminDashboard() {
               {products.map((product) => (
                 <div
                   key={product._id}
-                  className="bg-white border border-gray-300 rounded-xl overflow-hidden hover:border-gray-400 transition-all duration-300 shadow-sm"
+                  className="bg-gray-900 border border-gray-700 rounded-xl overflow-hidden hover:border-gray-600 transition-all duration-300"
                 >
                   <div className="relative h-48">
                     <img
@@ -424,23 +426,23 @@ export default function AdminDashboard() {
                     )}
                   </div>
                   <div className="p-4">
-                    <h3 className="font-semibold text-lg mb-2 text-black">{product.name}</h3>
-                    <p className="text-gray-600 text-sm mb-3 line-clamp-2">{product.description}</p>
+                    <h3 className="font-semibold text-lg mb-2 text-white">{product.name}</h3>
+                    <p className="text-gray-400 text-sm mb-3 line-clamp-2">{product.description}</p>
                     <div className="flex justify-between items-center mb-3">
-                      <span className="text-xl font-bold text-green-600">₹{product.price}</span>
-                      <span className="text-sm text-gray-600">Stock: {product.stock}</span>
+                      <span className="text-xl font-bold text-green-400">₹{product.price}</span>
+                      <span className="text-sm text-gray-400">Stock: {product.stock}</span>
                     </div>
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleEditProduct(product)}
-                        className="flex items-center gap-1 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm transition-colors"
+                        className="flex items-center gap-1 px-3 py-1 bg-white hover:bg-gray-200 text-black rounded text-sm transition-colors"
                       >
                         <Edit size={14} />
                         Edit
                       </button>
                       <button
                         onClick={() => handleDeleteProduct(product._id)}
-                        className="flex items-center gap-1 px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-sm transition-colors"
+                        className="flex items-center gap-1 px-3 py-1 bg-gray-700 hover:bg-gray-600 text-white border border-gray-600 rounded text-sm transition-colors"
                       >
                         <Trash2 size={14} />
                         Delete
@@ -452,7 +454,7 @@ export default function AdminDashboard() {
             </div>
 
             {products.length === 0 && (
-              <div className="text-center py-12 text-gray-600">
+              <div className="text-center py-12 text-gray-400">
                 <Package size={48} className="mx-auto mb-4 opacity-50" />
                 <p>No products found</p>
               </div>
@@ -462,59 +464,59 @@ export default function AdminDashboard() {
 
         {/* Product Form Modal */}
         {showProductForm && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 backdrop-blur-sm">
-            <div className="bg-white border border-gray-300 rounded-xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
-              <h3 className="text-xl font-semibold mb-4 text-black">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-70 backdrop-blur-sm">
+            <div className="bg-gray-900 border border-gray-700 rounded-xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
+              <h3 className="text-xl font-semibold mb-4 text-white">
                 {editingProduct ? 'Edit Product' : 'Add New Product'}
               </h3>
               <form onSubmit={handleProductSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1 text-black">Name</label>
+                  <label className="block text-sm font-medium mb-1 text-white">Name</label>
                   <input
                     type="text"
                     value={productForm.name}
                     onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
-                    className="w-full p-2 bg-white border border-gray-300 rounded focus:outline-none focus:border-black text-black"
+                    className="w-full p-2 bg-gray-800 border border-gray-600 rounded focus:outline-none focus:border-white text-white"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1 text-black">Description</label>
+                  <label className="block text-sm font-medium mb-1 text-white">Description</label>
                   <textarea
                     value={productForm.description}
                     onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
-                    className="w-full p-2 bg-white border border-gray-300 rounded focus:outline-none focus:border-black h-20 text-black"
+                    className="w-full p-2 bg-gray-800 border border-gray-600 rounded focus:outline-none focus:border-white h-20 text-white"
                     required
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium mb-1 text-black">Price</label>
+                    <label className="block text-sm font-medium mb-1 text-white">Price</label>
                     <input
                       type="number"
                       step="0.01"
                       value={productForm.price}
                       onChange={(e) => setProductForm({ ...productForm, price: e.target.value })}
-                      className="w-full p-2 bg-white border border-gray-300 rounded focus:outline-none focus:border-black text-black"
+                      className="w-full p-2 bg-gray-800 border border-gray-600 rounded focus:outline-none focus:border-white text-white"
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-1 text-black">Stock</label>
+                    <label className="block text-sm font-medium mb-1 text-white">Stock</label>
                     <input
                       type="number"
                       value={productForm.stock}
                       onChange={(e) => setProductForm({ ...productForm, stock: e.target.value })}
-                      className="w-full p-2 bg-white border border-gray-300 rounded focus:outline-none focus:border-black text-black"
+                      className="w-full p-2 bg-gray-800 border border-gray-600 rounded focus:outline-none focus:border-white text-white"
                       required
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1 text-black">Product Image</label>
+                  <label className="block text-sm font-medium mb-1 text-white">Product Image</label>
                   <div className="space-y-3">
                     {imagePreview && (
-                      <div className="relative w-full h-32 border border-gray-300 rounded overflow-hidden">
+                      <div className="relative w-full h-32 border border-gray-600 rounded overflow-hidden">
                         <img
                           src={imagePreview}
                           alt="Preview"
@@ -538,13 +540,13 @@ export default function AdminDashboard() {
                       />
                       <label
                         htmlFor="image-upload"
-                        className={`flex items-center gap-2 px-4 py-2 border border-gray-300 rounded cursor-pointer hover:bg-gray-50 transition-colors ${
+                        className={`flex items-center gap-2 px-4 py-2 border border-gray-600 rounded cursor-pointer hover:bg-gray-800 transition-colors text-white ${
                           imageUploading ? 'opacity-50 cursor-not-allowed' : ''
                         }`}
                       >
                         {imageUploading ? (
                           <>
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black"></div>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                             Uploading...
                           </>
                         ) : (
@@ -555,7 +557,7 @@ export default function AdminDashboard() {
                         )}
                       </label>
                     </div>
-                    <div className="text-center text-gray-500 text-sm">OR</div>
+                    <div className="text-center text-gray-400 text-sm">OR</div>
                     <input
                       type="url"
                       placeholder="Enter image URL"
@@ -564,17 +566,17 @@ export default function AdminDashboard() {
                         setProductForm({ ...productForm, image: e.target.value });
                         setImagePreview(e.target.value);
                       }}
-                      className="w-full p-2 bg-white border border-gray-300 rounded focus:outline-none focus:border-black text-black"
+                      className="w-full p-2 bg-gray-800 border border-gray-600 rounded focus:outline-none focus:border-white text-white"
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1 text-black">Category</label>
+                  <label className="block text-sm font-medium mb-1 text-white">Category</label>
                   <input
                     type="text"
                     value={productForm.category}
                     onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}
-                    className="w-full p-2 bg-white border border-gray-300 rounded focus:outline-none focus:border-black text-black"
+                    className="w-full p-2 bg-gray-800 border border-gray-600 rounded focus:outline-none focus:border-white text-white"
                     required
                   />
                 </div>
@@ -586,13 +588,13 @@ export default function AdminDashboard() {
                     onChange={(e) => setProductForm({ ...productForm, featured: e.target.checked })}
                     className="rounded"
                   />
-                  <label htmlFor="featured" className="text-sm text-black">Featured Product</label>
+                  <label htmlFor="featured" className="text-sm text-white">Featured Product</label>
                 </div>
                 <div className="flex gap-3 pt-4">
                   <button
                     type="submit"
                     disabled={loading || imageUploading}
-                    className="flex-1 py-2 bg-black hover:bg-gray-800 text-white rounded transition-colors disabled:opacity-50"
+                    className="flex-1 py-2 bg-white hover:bg-gray-200 text-black rounded transition-colors disabled:opacity-50"
                   >
                     {loading ? 'Saving...' : (editingProduct ? 'Update' : 'Create')}
                   </button>
@@ -603,7 +605,7 @@ export default function AdminDashboard() {
                       setEditingProduct(null);
                       setImagePreview('');
                     }}
-                    className="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-black rounded transition-colors"
+                    className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white border border-gray-600 rounded transition-colors"
                   >
                     Cancel
                   </button>

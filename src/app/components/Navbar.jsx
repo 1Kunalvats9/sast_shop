@@ -1,16 +1,18 @@
 'use client'
 import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton } from '@clerk/nextjs';
-import { ShoppingCart, Shield } from 'lucide-react';
+import { ShoppingCart, Shield, Package, ClipboardList } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import React, { useState } from 'react';
 import { useCheckRole } from '@/utils/client-checkRole';
 import { useCart } from '@/context/CartContext';
+import { useAuth } from '@clerk/nextjs';
 
 const Navbar = () => {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const router = useRouter()
     const isAdmin = useCheckRole('admin')
     const { getTotalItems } = useCart();
+    const { isSignedIn } = useAuth();
 
     return (
         <nav className="fixed top-0 overflow-hidden left-0 w-full z-50 px-2 md:px-4">
@@ -22,7 +24,34 @@ const Navbar = () => {
                     SAST Shop
                 </div>
 
-                <div className="flex items-center space-x-6 p-3">
+                <div className="flex items-center space-x-4 p-3">
+                    {/* Products Button */}
+                    <button
+                        onClick={() => router.push('/products')}
+                        className="px-3 py-1 md:px-4 md:py-2 cursor-pointer hover:text-blue-200 rounded-full
+                       text-white font-medium transition-all duration-300 hover:shadow-lg shadow-xl
+                        bg-white/10 text-lg md:text-xl backdrop-blur-lg border border-white/20
+                        focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 flex items-center gap-2"
+                    >
+                        <Package size={20} />
+                        <span className="hidden md:inline">Products</span>
+                    </button>
+
+                    {/* My Orders Button - Only show when signed in */}
+                    {isSignedIn && (
+                        <button
+                            onClick={() => router.push('/orders')}
+                            className="px-3 py-1 md:px-4 md:py-2 cursor-pointer hover:text-blue-200 rounded-full
+                           text-white font-medium transition-all duration-300 hover:shadow-lg shadow-xl
+                            bg-white/10 text-lg md:text-xl backdrop-blur-lg border border-white/20
+                            focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 flex items-center gap-2"
+                        >
+                            <ClipboardList size={20} />
+                            <span className="hidden md:inline">My Orders</span>
+                        </button>
+                    )}
+
+                    {/* Admin Button */}
                     {
                         isAdmin && 
                         <button
@@ -33,9 +62,11 @@ const Navbar = () => {
                             focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 flex items-center gap-2"
                         >
                             <Shield size={20} />
-                            Admin
+                            <span className="hidden md:inline">Admin</span>
                         </button>
                     }
+
+                    {/* Cart Button */}
                     <div onClick={()=>{
                         router.push('/cart')
                     }} className="text-white cursor-pointer rounded-2xl shadow-xl
@@ -47,6 +78,8 @@ const Navbar = () => {
                             </span>
                         )}
                     </div>
+
+                    {/* Auth Buttons */}
                     <SignedOut>
                         <SignInButton mode='modal'>
                             <button
