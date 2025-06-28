@@ -2,11 +2,15 @@
 import { useEffect, useState } from "react"
 import { X } from 'lucide-react'
 import { useRouter } from "next/navigation"
+import { useCart } from '@/context/CartContext'
+import { useAuth, useUser } from '@clerk/nextjs'
+import toast from 'react-hot-toast'
 
 export default function Cart() {
     const [showAddressPopup, setShowAddressPopup] = useState(false)
-    const [products, setProducts] = useState([])
     const [deliveryAddress, setDeliveryAddress] = useState(null)
+    const [paymentMethod, setPaymentMethod] = useState('COD')
+    const [loading, setLoading] = useState(false)
     const [addressForm, setAddressForm] = useState({
         fullName: '',
         addressLine1: '',
@@ -18,64 +22,39 @@ export default function Cart() {
         contactNumber: ''
     })
     const router = useRouter()
+    const { cart, updateQuantity, removeFromCart, clearCart, getTotalItems, getTotalPrice } = useCart()
+    const { isSignedIn } = useAuth()
+    const { user } = useUser()
 
     useEffect(() => {
-        try {
-            const cart = localStorage.getItem('cart')
-            if (!cart) {
-                setProducts([])
-            } else {
-                setProducts(JSON.parse(cart))
-            }
-            const storedAddress = localStorage.getItem('deliveryAddress')
-            if (storedAddress) {
-                setDeliveryAddress(JSON.parse(storedAddress))
-            }
-        } catch (err) {
-            console.log('cart error', err)
+        const storedAddress = localStorage.getItem('deliveryAddress')
+        if (storedAddress) {
+            setDeliveryAddress(JSON.parse(storedAddress))
         }
     }, [])
 
-    const calculateTotalPrice = () => {
-        return products.reduce((total, product) => {
-            const price = product.price || 0;
-            const quantity = product.quantity || 1;
-            return total + (price * quantity);
-        }, 0);
-    }
-
     const handleRemoveItem = (idToRemove) => {
-        let updatedCart = products.filter(product => product.id !== idToRemove);
-        setProducts(updatedCart);
-        localStorage.setItem('cart', JSON.stringify(updatedCart));
+        removeFromCart(idToRemove)
     }
 
     const handleClearCart = () => {
-        setProducts([]);
-        localStorage.removeItem('cart');
+        clearCart()
     }
 
     const handleQuantityChange = (id, newQuantity) => {
-        let updatedCart = products.map(product => {
-            if (product.id === id) {
-                return { ...product, quantity: parseInt(newQuantity) };
-            }
-            return product;
-        });
-        setProducts(updatedCart);
-        localStorage.setItem('cart', JSON.stringify(updatedCart));
-    };
+        updateQuantity(id, parseInt(newQuantity))
+    }
 
     const handleAddressFormChange = (e) => {
-        const { name, value } = e.target;
-        setAddressForm(prev => ({ ...prev, [name]: value }));
+        const { name, value } = e.target
+        setAddressForm(prev => ({ ...prev, [name]: value }))
     }
 
     const handleAddressSubmit = (e) => {
-        e.preventDefault();
-        setDeliveryAddress(addressForm);
-        localStorage.setItem('deliveryAddress', JSON.stringify(addressForm));
-        setShowAddressPopup(false);
+        e.preventDefault()
+        setDeliveryAddress(addressForm)
+        localStorage.setItem('deliveryAddress', JSON.stringify(addressForm))
+        setShowAddressPopup(false)
         setAddressForm({
             fullName: '',
             addressLine1: '',
@@ -85,14 +64,74 @@ export default function Cart() {
             postalCode: '',
             country: 'India',
             contactNumber: ''
-        });
+        })
     }
 
-    const totalItemsInCart = products.reduce((total, product) => total + (product.quantity || 1), 0);
-    const subtotalPrice = calculateTotalPrice();
-    const taxRate = 0.02;
-    const taxAmount = subtotalPrice * taxRate;
-    const finalTotal = subtotalPrice + taxAmount;
+    const handlePlaceOrder = async () => {
+        if (!isSignedIn) {
+            toast.error('Please sign in to place an order')
+            return
+        }
+
+        if (!deliveryAddress) {
+            toast.error('Please add a delivery address')
+            return
+        }
+
+        if (cart.length === 0) {
+            toast.error('Your cart is empty')
+            return
+        }
+
+        setLoading(true)
+
+        try {
+            const orderData = {
+                userId: user.id,
+                userEmail: user.emailAddresses[0].emailAddress,
+                items: cart.map(item => ({
+                    productId: item._id,
+                    name: item.name,
+                    price: item.price,
+                    quantity: item.quantity,
+                    image: item.image
+                })),
+                deliveryAddress,
+                paymentMethod,
+                totalAmount: finalTotal
+            }
+
+            const response = await fetch('/api/orders', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(orderData)
+            })
+
+            const data = await response.json()
+
+            if (data.success) {
+                toast.success('Order placed successfully!')
+                clearCart()
+                localStorage.removeItem('deliveryAddress')
+                router.push('/orders')
+            } else {
+                toast.error('Failed to place order')
+            }
+        } catch (error) {
+            console.error('Error placing order:', error)
+            toast.error('Failed to place order')
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const totalItemsInCart = getTotalItems()
+    const subtotalPrice = getTotalPrice()
+    const taxRate = 0.02
+    const taxAmount = subtotalPrice * taxRate
+    const finalTotal = subtotalPrice + taxAmount
 
     return (
         <div className="w-full min-h-screen bg-black flex items-center justify-center">
@@ -102,7 +141,7 @@ export default function Cart() {
                         Shopping Cart <span className="text-sm text-gray-400">{totalItemsInCart} Items</span>
                     </h1>
 
-                    {products.length === 0 ? (
+                    {cart.length === 0 ? (
                         <p className="text-gray-400 text-lg">Your cart is empty.</p>
                     ) : (
                         <>
@@ -112,14 +151,14 @@ export default function Cart() {
                                 <p className="text-center">Action</p>
                             </div>
 
-                            {products.map((product) => (
-                                <div key={product.id} className="grid grid-cols-[2fr_1fr_1fr] text-gray-300 items-center text-sm md:text-base font-medium pt-3 border-b border-gray-800 py-4">
+                            {cart.map((product) => (
+                                <div key={product._id} className="grid grid-cols-[2fr_1fr_1fr] text-gray-300 items-center text-sm md:text-base font-medium pt-3 border-b border-gray-800 py-4">
                                     <div className="flex items-center md:gap-6 gap-3">
                                         <div className="cursor-pointer w-24 h-24 flex items-center justify-center border border-gray-700 rounded bg-white overflow-hidden">
-                                            <img className="max-w-full h-full object-cover" src={product.image} alt={product.item_name} />
+                                            <img className="max-w-full h-full object-cover" src={product.image} alt={product.name} />
                                         </div>
                                         <div>
-                                            <p className="hidden md:block font-semibold">{product.item_name}</p>
+                                            <p className="hidden md:block font-semibold">{product.name}</p>
                                             <div className="font-normal text-gray-500">
                                                 <p>Price: ₹{product.price ? product.price.toFixed(2) : '0.00'}</p>
                                                 <div className='flex items-center'>
@@ -127,7 +166,7 @@ export default function Cart() {
                                                     <select
                                                         className='outline-none bg-gray-900 border border-gray-700 text-white ml-2 rounded p-1'
                                                         value={product.quantity || 1}
-                                                        onChange={(e) => handleQuantityChange(product.id, e.target.value)}
+                                                        onChange={(e) => handleQuantityChange(product._id, e.target.value)}
                                                     >
                                                         {Array(10).fill('').map((_, index) => (
                                                             <option key={index} value={index + 1}>{index + 1}</option>
@@ -138,7 +177,7 @@ export default function Cart() {
                                         </div>
                                     </div>
                                     <p className="text-center">₹{((product.price || 0) * (product.quantity || 1)).toFixed(2)}</p>
-                                    <button onClick={() => handleRemoveItem(product.id)} className="cursor-pointer mx-auto text-red-500 hover:text-red-700">
+                                    <button onClick={() => handleRemoveItem(product._id)} className="cursor-pointer mx-auto text-red-500 hover:text-red-700">
                                         <X size={20} />
                                     </button>
                                 </div>
@@ -186,7 +225,11 @@ export default function Cart() {
 
                         <p className="text-sm font-medium uppercase mt-6 text-gray-300">Payment Method</p>
 
-                        <select className="w-full border border-gray-700 bg-gray-900 px-3 py-2 mt-2 outline-none text-white rounded">
+                        <select 
+                            value={paymentMethod}
+                            onChange={(e) => setPaymentMethod(e.target.value)}
+                            className="w-full border border-gray-700 bg-gray-900 px-3 py-2 mt-2 outline-none text-white rounded"
+                        >
                             <option value="COD">Cash On Delivery</option>
                             <option value="Online">Online Payment</option>
                         </select>
@@ -209,8 +252,12 @@ export default function Cart() {
                         </p>
                     </div>
 
-                    <button className="w-full py-3 mt-6 cursor-pointer bg-white text-black font-medium hover:bg-gray-300 transition rounded">
-                        Place Order
+                    <button 
+                        onClick={handlePlaceOrder}
+                        disabled={loading || cart.length === 0 || !deliveryAddress}
+                        className="w-full py-3 mt-6 cursor-pointer bg-white text-black font-medium hover:bg-gray-300 transition rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {loading ? 'Placing Order...' : 'Place Order'}
                     </button>
                 </div>
             </div>
