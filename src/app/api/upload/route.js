@@ -1,15 +1,25 @@
 import { v2 as cloudinary } from 'cloudinary';
 import { NextResponse } from 'next/server';
 
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
-
 export async function POST(request) {
   try {
+    // Check if environment variables are set
+    if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+      console.error('Missing Cloudinary environment variables');
+      return NextResponse.json(
+        { success: false, error: 'Cloudinary configuration missing. Please check environment variables.' },
+        { status: 500 }
+      );
+    }
+
+    // Configure Cloudinary
+    cloudinary.config({
+      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+      api_key: process.env.CLOUDINARY_API_KEY,
+      api_secret: process.env.CLOUDINARY_API_SECRET,
+      secure: true, // Force HTTPS
+    });
+
     const formData = await request.formData();
     const file = formData.get('file');
 
@@ -20,20 +30,45 @@ export async function POST(request) {
       );
     }
 
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      return NextResponse.json(
+        { success: false, error: 'Only image files are allowed' },
+        { status: 400 }
+      );
+    }
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      return NextResponse.json(
+        { success: false, error: 'File size must be less than 10MB' },
+        { status: 400 }
+      );
+    }
+
     // Convert file to buffer
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Upload to Cloudinary
+    // Upload to Cloudinary with better error handling
     const result = await new Promise((resolve, reject) => {
       cloudinary.uploader.upload_stream(
         {
           resource_type: 'auto',
-          folder: 'sast-shop', // Optional: organize uploads in a folder
+          folder: 'sast-shop',
+          transformation: [
+            { width: 800, height: 600, crop: 'limit' }, // Optimize image size
+            { quality: 'auto' }, // Auto quality optimization
+            { fetch_format: 'auto' } // Auto format optimization
+          ]
         },
         (error, result) => {
-          if (error) reject(error);
-          else resolve(result);
+          if (error) {
+            console.error('Cloudinary upload error:', error);
+            reject(error);
+          } else {
+            resolve(result);
+          }
         }
       ).end(buffer);
     });
@@ -46,8 +81,21 @@ export async function POST(request) {
 
   } catch (error) {
     console.error('Error uploading to Cloudinary:', error);
+    
+    // More specific error messages
+    let errorMessage = 'Failed to upload image';
+    if (error.message.includes('Invalid API key')) {
+      errorMessage = 'Invalid Cloudinary API key';
+    } else if (error.message.includes('Invalid cloud name')) {
+      errorMessage = 'Invalid Cloudinary cloud name';
+    } else if (error.http_code === 401) {
+      errorMessage = 'Cloudinary authentication failed. Check your credentials.';
+    } else if (error.http_code === 404) {
+      errorMessage = 'Cloudinary account not found. Check your cloud name.';
+    }
+
     return NextResponse.json(
-      { success: false, error: 'Failed to upload image' },
+      { success: false, error: errorMessage },
       { status: 500 }
     );
   }

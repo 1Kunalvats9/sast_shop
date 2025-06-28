@@ -64,6 +64,18 @@ export default function AdminDashboard() {
   const handleImageUpload = async (file) => {
     if (!file) return;
 
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('File size must be less than 10MB');
+      return;
+    }
+
     setImageUploading(true);
     const formData = new FormData();
     formData.append('file', file);
@@ -81,11 +93,12 @@ export default function AdminDashboard() {
         setImagePreview(data.url);
         toast.success('Image uploaded successfully!');
       } else {
-        toast.error('Failed to upload image');
+        toast.error(data.error || 'Failed to upload image');
+        console.error('Upload error:', data.error);
       }
     } catch (error) {
       console.error('Error uploading image:', error);
-      toast.error('Failed to upload image');
+      toast.error('Network error. Please try again.');
     } finally {
       setImageUploading(false);
     }
@@ -115,6 +128,12 @@ export default function AdminDashboard() {
 
   const handleProductSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!productForm.image) {
+      toast.error('Please upload an image or provide an image URL');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -515,6 +534,7 @@ export default function AdminDashboard() {
                         }}
                         className="hidden"
                         id="image-upload"
+                        disabled={imageUploading}
                       />
                       <label
                         htmlFor="image-upload"
@@ -535,9 +555,10 @@ export default function AdminDashboard() {
                         )}
                       </label>
                     </div>
+                    <div className="text-center text-gray-500 text-sm">OR</div>
                     <input
                       type="url"
-                      placeholder="Or enter image URL"
+                      placeholder="Enter image URL"
                       value={productForm.image}
                       onChange={(e) => {
                         setProductForm({ ...productForm, image: e.target.value });
