@@ -26,6 +26,18 @@ export default function Cart() {
     const { isSignedIn } = useAuth()
     const { user } = useUser()
 
+    // Load Razorpay script dynamically
+    useEffect(() => {
+        const script = document.createElement('script');
+        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        script.async = true;
+        document.body.appendChild(script);
+
+        return () => {
+            document.body.removeChild(script);
+        };
+    }, []);
+
     useEffect(() => {
         const storedAddress = localStorage.getItem('deliveryAddress')
         if (storedAddress) {
@@ -56,78 +68,124 @@ export default function Cart() {
         localStorage.setItem('deliveryAddress', JSON.stringify(addressForm))
         setShowAddressPopup(false)
         setAddressForm({
-            fullName: '',
-            addressLine1: '',
-            addressLine2: '',
-            city: '',
-            state: '',
-            postalCode: '',
-            country: 'India',
-            contactNumber: ''
+            fullName: '', addressLine1: '', addressLine2: '', city: '',
+            state: '', postalCode: '', country: 'India', contactNumber: ''
         })
     }
-
-    const handlePlaceOrder = async () => {
-        if (!isSignedIn) {
-            toast.error('Please sign in to place an order')
-            return
-        }
-
-        if (!deliveryAddress) {
-            toast.error('Please add a delivery address')
-            return
-        }
-
-        if (cart.length === 0) {
-            toast.error('Your cart is empty')
-            return
-        }
-
-        setLoading(true)
-
+    
+    // This function will save the order to your database
+    const saveOrderToDb = async (paymentId = null) => {
         try {
             const orderData = {
                 userId: user.id,
                 userEmail: user.emailAddresses[0].emailAddress,
                 items: cart.map(item => ({
-                    productId: item._id,
-                    name: item.name,
-                    price: item.price,
-                    quantity: item.quantity,
-                    image: item.image,
+                    productId: item._id, name: item.name, price: item.price,
+                    quantity: item.quantity, image: item.image,
                     selectedSize: item.selectedSize || null,
                     selectedColor: item.selectedColor || null
                 })),
                 deliveryAddress,
                 paymentMethod,
-                totalAmount: finalTotal
-            }
+                totalAmount: finalTotal,
+                paymentId: paymentId, // Add paymentId for online orders
+                paymentStatus: paymentMethod === 'Online' ? 'Paid' : 'Pending'
+            };
 
             const response = await fetch('/api/orders', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(orderData)
-            })
+            });
 
-            const data = await response.json()
+            const data = await response.json();
 
             if (data.success) {
-                toast.success('Order placed successfully! Your order is under process and our team will approve it soon.')
-                clearCart()
-                localStorage.removeItem('deliveryAddress')
-                router.push('/orders')
+                toast.success('Order placed successfully!');
+                clearCart();
+                localStorage.removeItem('deliveryAddress');
+                router.push('/orders');
             } else {
-                toast.error(data.error || 'Failed to place order')
+                toast.error(data.error || 'Failed to save order.');
             }
         } catch (error) {
-            console.error('Error placing order:', error)
-            toast.error('Failed to place order')
+            console.error('Error saving order:', error);
+            toast.error('Failed to save order.');
         } finally {
-            setLoading(false)
+            setLoading(false);
         }
     }
+
+    const handlePlaceOrder = async () => {
+        if (!isSignedIn) return toast.error('Please sign in to place an order');
+        if (!deliveryAddress) return toast.error('Please add a delivery address');
+        if (cart.length === 0) return toast.error('Your cart is empty');
+
+        setLoading(true);
+
+        if (paymentMethod === 'COD') {
+            // For Cash on Delivery, directly save the order
+            await saveOrderToDb();
+        } else if (paymentMethod === 'Online') {
+            // For Online Payment, initiate Razorpay payment
+            try {
+                // 1. Create a Razorpay Order
+                const res = await fetch('/api/razorpay', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ amount: finalTotal, currency: 'INR' }),
+                });
+
+                const { success, order, error } = await res.json();
+
+                if (!success) {
+                    toast.error(error || 'Failed to create payment order.');
+                    setLoading(false);
+                    return;
+                }
+
+                // 2. Open Razorpay Checkout
+                const options = {
+                    key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+                    amount: order.amount,
+                    currency: order.currency,
+                    name: "Your Store Name",
+                    description: "Order Payment",
+                    order_id: order.id,
+                    handler: async function (response) {
+                        // 3. On successful payment, save the order to DB
+                        toast.success('Payment successful! Saving your order...');
+                        await saveOrderToDb(response.razorpay_payment_id);
+                    },
+                    prefill: {
+                        name: user?.fullName || deliveryAddress.fullName,
+                        email: user?.primaryEmailAddress?.emailAddress || '',
+                        contact: deliveryAddress.contactNumber,
+                    },
+                    notes: {
+                        address: `${deliveryAddress.addressLine1}, ${deliveryAddress.city}`,
+                    },
+                    theme: {
+                        color: "#3399cc",
+                    },
+                };
+
+                const paymentObject = new window.Razorpay(options);
+                paymentObject.on('payment.failed', function (response) {
+                    toast.error('Payment failed. Please try again.');
+                    console.error('Payment Failed:', response.error);
+                    setLoading(false);
+                });
+                paymentObject.open();
+
+            } catch (err) {
+                console.error("Error in payment process:", err);
+                toast.error('An error occurred during payment.');
+                setLoading(false);
+            }
+        }
+    }
+
 
     const totalItemsInCart = getTotalItems()
     const subtotalPrice = getTotalPrice()
@@ -137,6 +195,7 @@ export default function Cart() {
 
     return (
         <div className="w-full min-h-screen bg-black flex items-center justify-center">
+            {/* The rest of your JSX remains the same */}
             <div className="flex flex-col lg:flex-row py-16 max-w-7xl w-full px-4 sm:px-6 mx-auto bg-black text-white gap-8">
                 {/* Cart Items Section */}
                 <div className='flex-1 w-full'>
@@ -172,7 +231,6 @@ export default function Cart() {
                                                 <div className="flex-1 min-w-0">
                                                     <p className="font-semibold text-white mb-2 line-clamp-2">{product.name}</p>
                                                     
-                                                    {/* Size and Color Display */}
                                                     {(product.selectedSize || product.selectedColor) && (
                                                         <div className="mb-2 flex flex-wrap gap-2">
                                                             {product.selectedSize && (
@@ -206,7 +264,6 @@ export default function Cart() {
                                                 </div>
                                             </div>
 
-                                            {/* Mobile Layout for Price and Action */}
                                             <div className="flex justify-between items-center w-full md:hidden">
                                                 <p className="text-lg font-semibold text-white">₹{((product.price || 0) * (product.quantity || 1)).toFixed(2)}</p>
                                                 <button onClick={() => handleRemoveItem(itemId)} className="cursor-pointer text-red-500 hover:text-red-700 p-2">
@@ -214,7 +271,6 @@ export default function Cart() {
                                                 </button>
                                             </div>
 
-                                            {/* Desktop Layout for Price and Action */}
                                             <p className="hidden md:block text-center">₹{((product.price || 0) * (product.quantity || 1)).toFixed(2)}</p>
                                             <div className="hidden md:flex justify-center">
                                                 <button onClick={() => handleRemoveItem(itemId)} className="cursor-pointer text-red-500 hover:text-red-700">
@@ -226,7 +282,6 @@ export default function Cart() {
                                 })}
                             </div>
 
-                            {/* Action Buttons */}
                             <div className="flex flex-col sm:flex-row justify-between items-center mt-8 gap-4">
                                 <button className="group cursor-pointer flex items-center gap-2 text-gray-400 font-medium hover:text-white transition order-2 sm:order-1" onClick={()=>{
                                     router.push('/')
@@ -304,7 +359,7 @@ export default function Cart() {
                             disabled={loading || cart.length === 0 || !deliveryAddress}
                             className="w-full py-3 mt-6 cursor-pointer bg-white text-black font-medium hover:bg-gray-300 transition rounded disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {loading ? 'Placing Order...' : 'Place Order'}
+                            {loading ? 'Processing...' : 'Place Order'}
                         </button>
                     </div>
                 </div>
@@ -325,10 +380,7 @@ export default function Cart() {
                             <div>
                                 <label htmlFor="fullName" className="block text-sm font-medium text-gray-300 mb-1">Full Name</label>
                                 <input
-                                    type="text"
-                                    id="fullName"
-                                    name="fullName"
-                                    value={addressForm.fullName}
+                                    type="text" id="fullName" name="fullName" value={addressForm.fullName}
                                     onChange={handleAddressFormChange}
                                     className="w-full p-2 bg-gray-800 border border-gray-700 rounded focus:outline-none focus:border-blue-500"
                                     required
@@ -337,10 +389,7 @@ export default function Cart() {
                             <div>
                                 <label htmlFor="contactNumber" className="block text-sm font-medium text-gray-300 mb-1">Contact Number</label>
                                 <input
-                                    type="tel"
-                                    id="contactNumber"
-                                    name="contactNumber"
-                                    value={addressForm.contactNumber}
+                                    type="tel" id="contactNumber" name="contactNumber" value={addressForm.contactNumber}
                                     onChange={handleAddressFormChange}
                                     className="w-full p-2 bg-gray-800 border border-gray-700 rounded focus:outline-none focus:border-blue-500"
                                     required
@@ -349,10 +398,7 @@ export default function Cart() {
                             <div>
                                 <label htmlFor="addressLine1" className="block text-sm font-medium text-gray-300 mb-1">Address Line 1</label>
                                 <input
-                                    type="text"
-                                    id="addressLine1"
-                                    name="addressLine1"
-                                    value={addressForm.addressLine1}
+                                    type="text" id="addressLine1" name="addressLine1" value={addressForm.addressLine1}
                                     onChange={handleAddressFormChange}
                                     className="w-full p-2 bg-gray-800 border border-gray-700 rounded focus:outline-none focus:border-blue-500"
                                     required
@@ -361,10 +407,7 @@ export default function Cart() {
                             <div>
                                 <label htmlFor="addressLine2" className="block text-sm font-medium text-gray-300 mb-1">Address Line 2 (Optional)</label>
                                 <input
-                                    type="text"
-                                    id="addressLine2"
-                                    name="addressLine2"
-                                    value={addressForm.addressLine2}
+                                    type="text" id="addressLine2" name="addressLine2" value={addressForm.addressLine2}
                                     onChange={handleAddressFormChange}
                                     className="w-full p-2 bg-gray-800 border border-gray-700 rounded focus:outline-none focus:border-blue-500"
                                 />
@@ -373,10 +416,7 @@ export default function Cart() {
                                 <div>
                                     <label htmlFor="city" className="block text-sm font-medium text-gray-300 mb-1">City</label>
                                     <input
-                                        type="text"
-                                        id="city"
-                                        name="city"
-                                        value={addressForm.city}
+                                        type="text" id="city" name="city" value={addressForm.city}
                                         onChange={handleAddressFormChange}
                                         className="w-full p-2 bg-gray-800 border border-gray-700 rounded focus:outline-none focus:border-blue-500"
                                         required
@@ -385,10 +425,7 @@ export default function Cart() {
                                 <div>
                                     <label htmlFor="state" className="block text-sm font-medium text-gray-300 mb-1">State</label>
                                     <input
-                                        type="text"
-                                        id="state"
-                                        name="state"
-                                        value={addressForm.state}
+                                        type="text" id="state" name="state" value={addressForm.state}
                                         onChange={handleAddressFormChange}
                                         className="w-full p-2 bg-gray-800 border border-gray-700 rounded focus:outline-none focus:border-blue-500"
                                         required
@@ -399,10 +436,7 @@ export default function Cart() {
                                 <div>
                                     <label htmlFor="postalCode" className="block text-sm font-medium text-gray-300 mb-1">Postal Code</label>
                                     <input
-                                        type="text"
-                                        id="postalCode"
-                                        name="postalCode"
-                                        value={addressForm.postalCode}
+                                        type="text" id="postalCode" name="postalCode" value={addressForm.postalCode}
                                         onChange={handleAddressFormChange}
                                         className="w-full p-2 bg-gray-800 border border-gray-700 rounded focus:outline-none focus:border-blue-500"
                                         required
@@ -411,10 +445,7 @@ export default function Cart() {
                                 <div>
                                     <label htmlFor="country" className="block text-sm font-medium text-gray-300 mb-1">Country</label>
                                     <input
-                                        type="text"
-                                        id="country"
-                                        name="country"
-                                        value={addressForm.country}
+                                        type="text" id="country" name="country" value={addressForm.country}
                                         onChange={handleAddressFormChange}
                                         className="w-full p-2 bg-gray-800 border border-gray-700 rounded focus:outline-none focus:border-blue-500"
                                         required
